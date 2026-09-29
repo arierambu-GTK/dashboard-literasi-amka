@@ -868,7 +868,15 @@
       chartBarKecamatanInstance = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: groupList.map(g => (g === 'Tidak Ada Data' ? g : labelPrefix + g)),
+          labels: groupList.map(g => {
+            if (g === 'Tidak Ada Data') return g;
+            // Mencegah pendobelan kata 'Kelas' jika g sudah diawali kata 'Kelas'
+            if (labelPrefix === "Kelas ") {
+              const cleanG = g.toString().replace(/^kelas\s+/i, '').trim();
+              return "Kelas " + cleanG;
+            }
+            return labelPrefix + g;
+          }),
           datasets: datasets
         },
         plugins: [whiteBackgroundPlugin],
@@ -975,7 +983,7 @@
       let parts = [];
       if (valKecamatan) parts.push(`Kec. ${valKecamatan}`);
       if (valSekolah) parts.push(valSekolah);
-      if (valKelas) parts.push(`Kelas ${valKelas}`);
+      if (valKelas) parts.push(`Kelas ${valKelas.toString().replace(/^kelas\s+/i, '')}`);
       if (valJK) parts.push(`JK: ${valJK === 'L' ? 'Laki-laki' : 'Perempuan'}`);
       if (valCapaian) parts.push(`Level: ${valCapaian}`);
 
@@ -992,7 +1000,7 @@
       let nameParts = [prefix];
 
       if (valSekolah) nameParts.push(valSekolah);
-      if (valKelas) nameParts.push(`Kelas_${valKelas}`);
+      if (valKelas) nameParts.push(`Kelas_${valKelas.toString().replace(/^kelas\s+/i, '')}`);
       if (valKecamatan) nameParts.push(`Kec_${valKecamatan}`);
       if (valJK) nameParts.push(`JK_${valJK}`);
       if (valCapaian) nameParts.push(`Level_${valCapaian}`);
@@ -1050,7 +1058,8 @@
           try {
             const valKecamatan = document.getElementById('filterKecamatan').value || "Semua Kecamatan";
             const valSekolah = document.getElementById('filterSekolah').value || "Semua Sekolah";
-            const valKelas = document.getElementById('filterKelas').value ? "Kelas " + document.getElementById('filterKelas').value : "Semua Kelas";
+            const rawKelas = document.getElementById('filterKelas').value;
+            const valKelas = rawKelas ? "Kelas " + rawKelas.toString().replace(/^kelas\s+/i, '') : "Semua Kelas";
             const filterSummaryText = getActiveFiltersSummary();
 
             const totalSiswa = filteredDataCache.length;
@@ -1166,7 +1175,8 @@
 
             const valKecamatan = document.getElementById('filterKecamatan').value || "Semua Kecamatan";
             const valSekolah = document.getElementById('filterSekolah').value || "Semua Sekolah";
-            const valKelas = document.getElementById('filterKelas').value ? "Kelas " + document.getElementById('filterKelas').value : "Semua Kelas";
+            const rawKelas = document.getElementById('filterKelas').value;
+            const valKelas = rawKelas ? "Kelas " + rawKelas.toString().replace(/^kelas\s+/i, '') : "Semua Kelas";
             const currentDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
             const tanggalAsesmenVal = filteredDataCache[0] ? (filteredDataCache[0]["Tanggal Asesmen"] || '-') : '-';
 
@@ -1189,18 +1199,21 @@
             // Header Tabel Menambahkan "Nama Guru"
             const tableHeaders = [["No", "Nama Siswa", "Nama Guru", "Sekolah / Kelas", "Huruf", "Suku Kata", "Kata", "Paragraf", "Cerita", "Tanya"]];
             
-            const tableBody = filteredDataCache.map((item, index) => [
-              index + 1,
-              item["Nama Siswa"] || '-',
-              item["Nama Guru"] || '-',
-              `${item["Nama Sekolah"] || '-'}\n(Kelas ${item["Kelas"] || '-'})`,
-              item["Huruf"] ?? '-',
-              item["Suku Kata"] ?? '-',
-              item["Kata"] ?? '-',
-              item["Paragraf"] ?? '-',
-              item["Cerita Pendek"] ?? '-',
-              item["Pertanyaan"] ?? '-'
-            ]);
+            const tableBody = filteredDataCache.map((item, index) => {
+              const kStr = (item["Kelas"] || '-').toString().replace(/^kelas\s+/i, '');
+              return [
+                index + 1,
+                item["Nama Siswa"] || '-',
+                item["Nama Guru"] || '-',
+                `${item["Nama Sekolah"] || '-'}\n(Kelas ${kStr})`,
+                item["Huruf"] ?? '-',
+                item["Suku Kata"] ?? '-',
+                item["Kata"] ?? '-',
+                item["Paragraf"] ?? '-',
+                item["Cerita Pendek"] ?? '-',
+                item["Pertanyaan"] ?? '-'
+              ];
+            });
 
             doc.autoTable({
               startY: 23,
