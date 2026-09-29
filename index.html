@@ -2,6 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard Capaian Literasi Asesmen Siswa</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -13,14 +14,14 @@
 
   <!-- ================= AREA LOGIN & REGISTER ================= -->
   <div id="authSection" class="min-h-screen flex items-center justify-center p-4 bg-slate-900">
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-8 border border-slate-200">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 sm:p-8 border border-slate-200">
       
       <!-- Logo / Header Auth -->
       <div class="text-center mb-6">
         <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-indigo-100 text-indigo-700 text-2xl mb-3">
           📚
         </div>
-        <h2 id="authTitle" class="text-2xl font-bold text-slate-800">Masuk ke Dashboard</h2>
+        <h2 id="authTitle" class="text-xl sm:text-2xl font-bold text-slate-800">Masuk ke Dashboard</h2>
         <p id="authSubtitle" class="text-xs text-slate-500 mt-1">Silakan masuk menggunakan akun Admin atau Guest Anda</p>
       </div>
 
@@ -58,69 +59,71 @@
   <!-- ================= AREA DASHBOARD ================= -->
   <div id="mainDashboard" class="hidden">
     
-    <!-- Header Dashboard -->
-    <header class="bg-indigo-800 text-white py-6 px-8 shadow-md">
-      <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+    <!-- Header Dashboard (Responsif HP) -->
+    <header class="bg-indigo-800 text-white py-4 sm:py-6 px-4 sm:px-8 shadow-md">
+      <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 class="text-2xl font-bold tracking-tight">Dashboard Capaian Literasi Siswa</h1>
-          <p class="text-indigo-200 text-sm mt-1">Pemetaan Level Membaca: Huruf &rarr; Suku Kata &rarr; Kata &rarr; Paragraf &rarr; Cerita Pendek &rarr; Pertanyaan</p>
+          <h1 class="text-xl sm:text-2xl font-bold tracking-tight">Dashboard Capaian Literasi Siswa</h1>
+          <p class="text-indigo-200 text-xs sm:text-sm mt-1">Pemetaan Level Membaca: Huruf &rarr; Suku Kata &rarr; Kata &rarr; Paragraf &rarr; Cerita Pendek &rarr; Pertanyaan</p>
         </div>
-        <div class="flex items-center gap-3">
-          <span id="userBadge" class="bg-indigo-900 text-indigo-200 px-3 py-1.5 rounded-lg text-xs font-semibold border border-indigo-700">
+        <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-between sm:justify-end border-t border-indigo-700/50 pt-3 sm:pt-0 sm:border-0">
+          <span id="userBadge" class="bg-indigo-900 text-indigo-200 px-2.5 py-1 rounded-lg text-xs font-semibold border border-indigo-700">
             👤 User: -
           </span>
-          <button onclick="loadData()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-medium transition shadow flex items-center gap-1.5">
-            <span>🔄</span> Refresh Data
-          </button>
-          <button onclick="handleLogout()" class="bg-rose-600 hover:bg-rose-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-medium transition shadow flex items-center gap-1.5">
-            <span>🚪</span> Keluar
-          </button>
+          <div class="flex items-center gap-2">
+            <button onclick="loadData()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition shadow flex items-center gap-1">
+              <span>🔄</span> Refresh
+            </button>
+            <button onclick="handleLogout()" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition shadow flex items-center gap-1">
+              <span>🚪</span> Keluar
+            </button>
+          </div>
         </div>
       </div>
     </header>
 
-    <main class="max-w-7xl mx-auto p-6 space-y-6">
+    <main class="max-w-7xl mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
 
       <!-- Loading State -->
-      <div id="loading" class="flex flex-col justify-center items-center py-20">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-700"></div>
-        <span id="loadingText" class="mt-4 text-slate-600 font-medium">Memuat Data dari Tabel...</span>
+      <div id="loading" class="flex flex-col justify-center items-center py-16 sm:py-20">
+        <div class="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-indigo-700"></div>
+        <span id="loadingText" class="mt-4 text-xs sm:text-sm text-slate-600 font-medium">Memuat Data dari Tabel...</span>
       </div>
 
       <!-- Main Content Area -->
-      <div id="dashboardContent" class="hidden space-y-6">
+      <div id="dashboardContent" class="hidden space-y-4 sm:space-y-6">
 
-        <!-- Filter Bar -->
-        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <!-- Filter Bar (Grid 2 Kolom di HP, 5 Kolom di Layar Besar) -->
+        <div class="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-200 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
           <div>
-            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Kecamatan</label>
-            <select id="filterKecamatan" onchange="onKecamatanChange()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+            <label class="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase mb-1">Kecamatan</label>
+            <select id="filterKecamatan" onchange="onKecamatanChange()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs sm:text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
               <option value="">Semua Kecamatan</option>
             </select>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Sekolah</label>
-            <select id="filterSekolah" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+            <label class="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase mb-1">Sekolah</label>
+            <select id="filterSekolah" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs sm:text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
               <option value="">Semua Sekolah</option>
             </select>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Kelas</label>
-            <select id="filterKelas" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+            <label class="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase mb-1">Kelas</label>
+            <select id="filterKelas" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs sm:text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
               <option value="">Semua Kelas</option>
             </select>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Jenis Kelamin</label>
-            <select id="filterJK" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+            <label class="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase mb-1">Jenis Kelamin</label>
+            <select id="filterJK" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs sm:text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
               <option value="">Semua Jenis Kelamin</option>
               <option value="L">Laki-laki (L)</option>
               <option value="P">Perempuan (P)</option>
             </select>
           </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Level Capaian Tertinggi</label>
-            <select id="filterCapaian" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-medium text-indigo-700">
+          <div class="col-span-2 sm:col-span-1">
+            <label class="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase mb-1">Level Capaian Tertinggi</label>
+            <select id="filterCapaian" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs sm:text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-medium text-indigo-700">
               <option value="">Semua Level</option>
               <option value="Huruf">Huruf</option>
               <option value="Suku Kata">Suku Kata</option>
@@ -134,82 +137,82 @@
 
         <!-- Ringkasan Capaian Literasi (Card KPIs) -->
         <div>
-          <h2 class="text-lg font-bold text-slate-800 mb-3 flex items-center gap-2">
+          <h2 class="text-base sm:text-lg font-bold text-slate-800 mb-2.5 flex items-center gap-1.5">
             <span>📊</span> Distribusi Capaian Literasi Siswa
           </h2>
-          <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-            <div class="bg-slate-100 border border-slate-300 p-3.5 rounded-xl text-center">
-              <p class="text-[11px] font-bold text-slate-600 uppercase tracking-tight">Total Siswa</p>
-              <p id="countTotalSiswa" class="text-2xl font-extrabold text-slate-800 mt-1">0</p>
-              <p class="text-[10px] text-slate-500">Filtered</p>
+          <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-3">
+            <div class="bg-slate-100 border border-slate-300 p-2.5 sm:p-3.5 rounded-xl text-center col-span-2 sm:col-span-1">
+              <p class="text-[10px] sm:text-[11px] font-bold text-slate-600 uppercase tracking-tight">Total Siswa</p>
+              <p id="countTotalSiswa" class="text-xl sm:text-2xl font-extrabold text-slate-800 mt-0.5">0</p>
+              <p class="text-[9px] sm:text-[10px] text-slate-500">Filtered</p>
             </div>
-            <div class="bg-orange-50 border border-orange-200 p-3.5 rounded-xl text-center">
-              <p class="text-[11px] font-bold text-orange-600 uppercase tracking-tight">Huruf</p>
-              <p id="countHuruf" class="text-2xl font-extrabold text-orange-700 mt-1">0</p>
-              <p id="percentHuruf" class="text-[10px] text-orange-500">0%</p>
+            <div class="bg-orange-50 border border-orange-200 p-2.5 sm:p-3.5 rounded-xl text-center">
+              <p class="text-[10px] sm:text-[11px] font-bold text-orange-600 uppercase tracking-tight">Huruf</p>
+              <p id="countHuruf" class="text-xl sm:text-2xl font-extrabold text-orange-700 mt-0.5">0</p>
+              <p id="percentHuruf" class="text-[9px] sm:text-[10px] text-orange-500">0%</p>
             </div>
-            <div class="bg-yellow-50 border border-yellow-200 p-3.5 rounded-xl text-center">
-              <p class="text-[11px] font-bold text-yellow-700 uppercase tracking-tight">Suku Kata</p>
-              <p id="countSukuKata" class="text-2xl font-extrabold text-yellow-800 mt-1">0</p>
-              <p id="percentSukuKata" class="text-[10px] text-yellow-600">0%</p>
+            <div class="bg-yellow-50 border border-yellow-200 p-2.5 sm:p-3.5 rounded-xl text-center">
+              <p class="text-[10px] sm:text-[11px] font-bold text-yellow-700 uppercase tracking-tight">Suku Kata</p>
+              <p id="countSukuKata" class="text-xl sm:text-2xl font-extrabold text-yellow-800 mt-0.5">0</p>
+              <p id="percentSukuKata" class="text-[9px] sm:text-[10px] text-yellow-600">0%</p>
             </div>
-            <div class="bg-amber-50 border border-amber-200 p-3.5 rounded-xl text-center">
-              <p class="text-[11px] font-bold text-amber-600 uppercase tracking-tight">Kata</p>
-              <p id="countKata" class="text-2xl font-extrabold text-amber-700 mt-1">0</p>
-              <p id="percentKata" class="text-[10px] text-amber-500">0%</p>
+            <div class="bg-amber-50 border border-amber-200 p-2.5 sm:p-3.5 rounded-xl text-center">
+              <p class="text-[10px] sm:text-[11px] font-bold text-amber-600 uppercase tracking-tight">Kata</p>
+              <p id="countKata" class="text-xl sm:text-2xl font-extrabold text-amber-700 mt-0.5">0</p>
+              <p id="percentKata" class="text-[9px] sm:text-[10px] text-amber-500">0%</p>
             </div>
-            <div class="bg-emerald-50 border border-emerald-200 p-3.5 rounded-xl text-center">
-              <p class="text-[11px] font-bold text-emerald-600 uppercase tracking-tight">Paragraf</p>
-              <p id="countParagraf" class="text-2xl font-extrabold text-emerald-700 mt-1">0</p>
-              <p id="percentParagraf" class="text-[10px] text-emerald-500">0%</p>
+            <div class="bg-emerald-50 border border-emerald-200 p-2.5 sm:p-3.5 rounded-xl text-center">
+              <p class="text-[10px] sm:text-[11px] font-bold text-emerald-600 uppercase tracking-tight">Paragraf</p>
+              <p id="countParagraf" class="text-xl sm:text-2xl font-extrabold text-emerald-700 mt-0.5">0</p>
+              <p id="percentParagraf" class="text-[9px] sm:text-[10px] text-emerald-500">0%</p>
             </div>
-            <div class="bg-teal-50 border border-teal-200 p-3.5 rounded-xl text-center">
-              <p class="text-[11px] font-bold text-teal-600 uppercase tracking-tight">Cerita Pendek</p>
-              <p id="countCeritaPendek" class="text-2xl font-extrabold text-teal-700 mt-1">0</p>
-              <p id="percentCeritaPendek" class="text-[10px] text-teal-500">0%</p>
+            <div class="bg-teal-50 border border-teal-200 p-2.5 sm:p-3.5 rounded-xl text-center">
+              <p class="text-[10px] sm:text-[11px] font-bold text-teal-600 uppercase tracking-tight">Cerita Pendek</p>
+              <p id="countCeritaPendek" class="text-xl sm:text-2xl font-extrabold text-teal-700 mt-0.5">0</p>
+              <p id="percentCeritaPendek" class="text-[9px] sm:text-[10px] text-teal-500">0%</p>
             </div>
-            <div class="bg-blue-50 border border-blue-200 p-3.5 rounded-xl text-center">
-              <p class="text-[11px] font-bold text-blue-600 uppercase tracking-tight">Pertanyaan</p>
-              <p id="countPertanyaan" class="text-2xl font-extrabold text-blue-700 mt-1">0</p>
-              <p id="percentPertanyaan" class="text-[10px] text-blue-500">0%</p>
+            <div class="bg-blue-50 border border-blue-200 p-2.5 sm:p-3.5 rounded-xl text-center col-span-2 sm:col-span-1">
+              <p class="text-[10px] sm:text-[11px] font-bold text-blue-600 uppercase tracking-tight">Pertanyaan</p>
+              <p id="countPertanyaan" class="text-xl sm:text-2xl font-extrabold text-blue-700 mt-0.5">0</p>
+              <p id="percentPertanyaan" class="text-[9px] sm:text-[10px] text-blue-500">0%</p>
             </div>
           </div>
         </div>
 
         <!-- Header + TOMBOL 1: Ekspor Data Grafik -->
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-2">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2.5 pt-1">
           <div>
-            <h2 class="text-lg font-bold text-slate-800">📈 Visualisasi Grafik Literasi</h2>
-            <p class="text-xs text-slate-500">Analisis grafik capaian literasi berdasarkan wilayah dan kriteria siswa</p>
+            <h2 class="text-base sm:text-lg font-bold text-slate-800">📈 Visualisasi Grafik Literasi</h2>
+            <p class="text-[11px] sm:text-xs text-slate-500">Analisis grafik capaian literasi berdasarkan wilayah dan kriteria siswa</p>
           </div>
-          <button onclick="exportChartsDirectPDF()" id="btnExportChartsPDF" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow flex items-center justify-center gap-2 w-full sm:w-auto">
+          <button onclick="exportChartsDirectPDF()" id="btnExportChartsPDF" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium transition shadow flex items-center justify-center gap-2 w-full sm:w-auto">
             <span>📊</span> Ekspor Data Capaian Literasi Siswa
           </button>
         </div>
 
         <!-- Area Visualisasi Grafik -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <div class="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
             <div>
-              <h3 id="chartBarTitle" class="text-lg font-bold text-slate-800">📊 Capaian Literasi Per Kecamatan</h3>
-              <p id="chartBarSubtitle" class="text-xs text-slate-500">Perbandingan jumlah siswa pada tiap jenjang membaca per Kecamatan</p>
-              <div id="filterInfoBar" class="mt-2 inline-block bg-indigo-50 border border-indigo-200 text-indigo-700 px-2.5 py-1 rounded-md text-[11px] font-medium"></div>
+              <h3 id="chartBarTitle" class="text-base sm:text-lg font-bold text-slate-800">📊 Capaian Literasi Per Kecamatan</h3>
+              <p id="chartBarSubtitle" class="text-[11px] sm:text-xs text-slate-500">Perbandingan jumlah siswa pada tiap jenjang membaca per Kecamatan</p>
+              <div id="filterInfoBar" class="mt-2 inline-block bg-indigo-50 border border-indigo-200 text-indigo-700 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md text-[10px] sm:text-[11px] font-medium"></div>
             </div>
-            <div class="w-full flex justify-center py-4">
-              <div class="w-full h-[380px]">
+            <div class="w-full flex justify-center py-2 sm:py-4">
+              <div class="w-full h-[280px] sm:h-[380px]">
                 <canvas id="chartBarKecamatan"></canvas>
               </div>
             </div>
           </div>
 
-          <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
+          <div class="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
             <div>
-              <h3 class="text-lg font-bold text-slate-800">🍰 Proporsi Kemampuan Membaca</h3>
-              <p class="text-xs text-slate-500">Persentase total kontribusi setiap jenjang literasi membaca siswa (Sesuai Filter)</p>
-              <div id="filterInfoPie" class="mt-2 inline-block bg-teal-50 border border-teal-200 text-teal-700 px-2.5 py-1 rounded-md text-[11px] font-medium"></div>
+              <h3 class="text-base sm:text-lg font-bold text-slate-800">🍰 Proporsi Kemampuan Membaca</h3>
+              <p class="text-[11px] sm:text-xs text-slate-500">Persentase total kontribusi setiap jenjang literasi membaca siswa (Sesuai Filter)</p>
+              <div id="filterInfoPie" class="mt-2 inline-block bg-teal-50 border border-teal-200 text-teal-700 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md text-[10px] sm:text-[11px] font-medium"></div>
             </div>
-            <div class="w-full flex justify-center py-4">
-              <div class="w-full h-[380px]">
+            <div class="w-full flex justify-center py-2 sm:py-4">
+              <div class="w-full h-[280px] sm:h-[380px]">
                 <canvas id="chartProporsiMembaca"></canvas>
               </div>
             </div>
@@ -217,38 +220,40 @@
         </div>
 
         <!-- Tabel Detail Data (Disembunyikan Otomatis untuk Guest) -->
-        <div id="tableSection" class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+        <div id="tableSection" class="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-200">
           <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
             <div>
               <h3 class="text-base font-bold text-slate-700">Rincian Hasil Asesmen Membaca Siswa</h3>
-              <p class="text-xs text-slate-500">Data hasil pengujian membaca berjenjang setiap siswa</p>
+              <p class="text-[11px] sm:text-xs text-slate-500">Data hasil pengujian membaca berjenjang setiap siswa</p>
             </div>
             <div class="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
-              <input type="text" id="searchInput" placeholder="Cari nama siswa, sekolah, kecamatan..." class="bg-slate-50 border border-slate-300 text-sm rounded-lg p-2 w-full sm:w-64 focus:ring-2 focus:ring-indigo-500 outline-none">
-              <button onclick="exportTableDirectPDF()" id="btnExportTablePDF" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow flex items-center justify-center gap-2 w-full sm:w-auto whitespace-nowrap">
+              <input type="text" id="searchInput" placeholder="Cari nama siswa, sekolah, kecamatan..." class="bg-slate-50 border border-slate-300 text-xs sm:text-sm rounded-lg p-2 w-full sm:w-64 focus:ring-2 focus:ring-indigo-500 outline-none">
+              <button onclick="exportTableDirectPDF()" id="btnExportTablePDF" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium transition shadow flex items-center justify-center gap-2 w-full sm:w-auto whitespace-nowrap">
                 <span>📄</span> Ekspor Rincian Asesmen
               </button>
             </div>
           </div>
           
-          <div class="overflow-x-auto">
-            <table class="w-full text-xs text-left text-slate-600 border-collapse">
-              <thead class="text-xs text-slate-700 uppercase bg-slate-100 border-b">
-                <tr>
-                  <th class="p-3">Nama Siswa</th>
-                  <th class="p-3">Sekolah / Kelas</th>
-                  <th class="p-3">Huruf</th>
-                  <th class="p-3">Suku Kata</th>
-                  <th class="p-3">Kata</th>
-                  <th class="p-3">Paragraf</th>
-                  <th class="p-3">Cerita Pendek</th>
-                  <th class="p-3">Pertanyaan</th>
-                </tr>
-              </thead>
-              <tbody id="tableBody">
-                <!-- Content via JS -->
-              </tbody>
-            </table>
+          <div class="overflow-x-auto -mx-4 sm:mx-0">
+            <div class="inline-block min-w-full align-middle px-4 sm:px-0">
+              <table class="w-full text-xs text-left text-slate-600 border-collapse">
+                <thead class="text-[11px] sm:text-xs text-slate-700 uppercase bg-slate-100 border-b">
+                  <tr>
+                    <th class="p-2.5 sm:p-3">Nama Siswa</th>
+                    <th class="p-2.5 sm:p-3">Sekolah / Kelas</th>
+                    <th class="p-2.5 sm:p-3 text-center">Huruf</th>
+                    <th class="p-2.5 sm:p-3 text-center">Suku Kata</th>
+                    <th class="p-2.5 sm:p-3 text-center">Kata</th>
+                    <th class="p-2.5 sm:p-3 text-center">Paragraf</th>
+                    <th class="p-2.5 sm:p-3 text-center">Cerita Pendek</th>
+                    <th class="p-2.5 sm:p-3 text-center">Pertanyaan</th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody">
+                  <!-- Content via JS -->
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -261,7 +266,7 @@
     const SUPABASE_URL = 'https://pjyxgbvsyhaoofbwwooh.supabase.co'; 
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqeXhnYnZzeWhhb29mYnd3b29oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2Mjc2NjAsImV4cCI6MjEwNjIwMzY2MH0.sHiVuPdP_StJioebd9RF8tMsTlrjs1QhmLo2qt-Cnk0'; 
     const TABEL_NAME = 'asesmen_literasi';
-    const TABEL_AUTH = 'password_amka'; // Tabel khusus otentikasi akun
+    const TABEL_AUTH = 'password_amka'; 
 
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -313,9 +318,7 @@
         document.getElementById('mainDashboard').classList.remove('hidden');
         document.getElementById('userBadge').textContent = `👤 ${activeUser.username} (${activeUser.role.toUpperCase()})`;
         
-        // Terapkan batasan visual berdasarkan role (Admin vs Guest)
         applyRolePermissions(activeUser.role);
-        
         loadData();
       } else {
         document.getElementById('authSection').classList.remove('hidden');
@@ -328,11 +331,9 @@
       const btnExportTablePDF = document.getElementById('btnExportTablePDF');
 
       if (role === 'guest') {
-        // Sembunyikan Tabel Rincian Siswa dan Tombol Ekspor Rincian untuk Guest
         if (tableSection) tableSection.classList.add('hidden');
         if (btnExportTablePDF) btnExportTablePDF.classList.add('hidden');
       } else {
-        // Tampilkan Semua Elemen untuk Admin
         if (tableSection) tableSection.classList.remove('hidden');
         if (btnExportTablePDF) btnExportTablePDF.classList.remove('hidden');
       }
@@ -399,7 +400,6 @@
         if (isRegisterMode) {
           btn.innerHTML = `<span>⏳ Mendaftarkan...</span>`;
 
-          // Cek apakah username sudah digunakan
           const { data: existingUser } = await _supabase
             .from(TABEL_AUTH)
             .select('username')
@@ -412,7 +412,6 @@
             return showAuthAlert("Username sudah terdaftar! Gunakan username lain.");
           }
 
-          // Simpan Guest Baru ke Tabel password_amka
           const { error: insertError } = await _supabase
             .from(TABEL_AUTH)
             .insert([
@@ -444,7 +443,6 @@
             return showAuthAlert("Username atau Password salah!");
           }
 
-          // Simpan sesi login
           sessionStorage.setItem('dashboard_user', JSON.stringify({
             username: userData.username,
             role: userData.role || 'guest'
@@ -753,7 +751,6 @@
       updateBarChart(filteredDataCache, kecVal, sekVal);
       updateProporsiMembacaChart(filteredDataCache);
       
-      // Update tabel hanya jika user adalah Admin (elemen ada)
       const activeUser = JSON.parse(sessionStorage.getItem('dashboard_user'));
       if (activeUser && activeUser.role !== 'guest') {
         updateTable(filteredDataCache);
@@ -836,15 +833,15 @@
           datasets: datasets
         },
         options: {
-          animation: false, // Animasi dimatikan agar render instan & PDF tidak terpotong
+          animation: false,
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { position: 'bottom', labels: { boxWidth: 10, padding: 10, font: { size: 10, weight: 'bold' } } },
+            legend: { position: 'bottom', labels: { boxWidth: 8, padding: 8, font: { size: 9, weight: 'bold' } } },
             tooltip: { mode: 'index', intersect: false }
           },
           scales: {
-            x: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' }, color: '#334155' } },
+            x: { grid: { display: false }, ticks: { font: { size: 9, weight: 'bold' }, color: '#334155' } },
             y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: 'rgba(203, 213, 225, 0.4)' } }
           }
         }
@@ -866,11 +863,11 @@
           datasets: [{ data: counts, backgroundColor: bgColors, hoverOffset: 6, borderWidth: 2, borderColor: '#ffffff' }]
         },
         options: {
-          animation: false, // Animasi dimatikan agar render instan & PDF tidak terpotong
+          animation: false,
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { position: 'bottom', labels: { boxWidth: 10, padding: 10, font: { size: 10, weight: 'bold' } } },
+            legend: { position: 'bottom', labels: { boxWidth: 8, padding: 8, font: { size: 9, weight: 'bold' } } },
             tooltip: {
               callbacks: {
                 label: function(context) {
@@ -904,20 +901,20 @@
         tr.className = "border-b hover:bg-slate-50 transition";
         
         tr.innerHTML = `
-          <td class="p-3 font-semibold text-slate-800">
+          <td class="p-2.5 sm:p-3 font-semibold text-slate-800">
             ${item["Nama Siswa"] || '-'}
             <div class="text-[10px] text-slate-400 font-normal">JK: ${item["Jenis Kelamin"] || '-'} | Kec. ${item["Kecamatan"] || '-'}</div>
           </td>
-          <td class="p-3">
+          <td class="p-2.5 sm:p-3">
             <div class="font-medium text-slate-700">${item["Nama Sekolah"] || '-'}</div>
             <div class="text-[10px] text-slate-400">${item["Kelas"] || '-'}</div>
           </td>
-          <td class="p-3 text-slate-500">${item["Huruf"] ?? '-'}</td>
-          <td class="p-3 text-slate-500">${item["Suku Kata"] ?? '-'}</td>
-          <td class="p-3 text-slate-500">${item["Kata"] ?? '-'}</td>
-          <td class="p-3 font-medium text-emerald-700 bg-emerald-50/50">${item["Paragraf"] ?? '-'}</td>
-          <td class="p-3 font-medium text-teal-700 bg-teal-50/50">${item["Cerita Pendek"] ?? '-'}</td>
-          <td class="p-3 font-medium text-blue-700 bg-blue-50/50">${item["Pertanyaan"] ?? '-'}</td>
+          <td class="p-2.5 sm:p-3 text-center text-slate-500">${item["Huruf"] ?? '-'}</td>
+          <td class="p-2.5 sm:p-3 text-center text-slate-500">${item["Suku Kata"] ?? '-'}</td>
+          <td class="p-2.5 sm:p-3 text-center text-slate-500">${item["Kata"] ?? '-'}</td>
+          <td class="p-2.5 sm:p-3 text-center font-medium text-emerald-700 bg-emerald-50/50">${item["Paragraf"] ?? '-'}</td>
+          <td class="p-2.5 sm:p-3 text-center font-medium text-teal-700 bg-teal-50/50">${item["Cerita Pendek"] ?? '-'}</td>
+          <td class="p-2.5 sm:p-3 text-center font-medium text-blue-700 bg-blue-50/50">${item["Pertanyaan"] ?? '-'}</td>
         `;
         fragment.appendChild(tr);
       });
@@ -925,7 +922,7 @@
       tbody.appendChild(fragment);
     }
 
-    // --- TOMBOL 1: EKSPOR GRAFIK KE PDF (DAPAT DIAKSES ADMIN & GUEST) ---
+    // --- TOMBOL 1: EKSPOR GRAFIK KE PDF ---
     function exportChartsDirectPDF() {
       if (filteredDataCache.length === 0) return alert("Tidak ada data grafik untuk diekspor.");
       
@@ -935,7 +932,6 @@
         btn.disabled = true;
         btn.innerHTML = `<span>⏳ Menyiapkan PDF Grafik...</span>`;
 
-        // Delay 300ms memastikan canvas Chart.js siap 100%
         setTimeout(() => {
           try {
             const valKecamatan = document.getElementById('filterKecamatan').value || "Semua Kecamatan";
@@ -1025,7 +1021,7 @@
       });
     }
 
-    // --- TOMBOL 2: EKSPOR TABEL RINCIAN KE PDF (KHUSUS ADMIN) ---
+    // --- TOMBOL 2: EKSPOR TABEL RINCIAN KE PDF ---
     function exportTableDirectPDF() {
       if (filteredDataCache.length === 0) return alert("Tidak ada data rincian siswa yang tampil untuk diekspor.");
 
