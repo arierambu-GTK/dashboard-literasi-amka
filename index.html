@@ -393,74 +393,75 @@
     }
 
     async function handleAuthSubmit(e) {
-      e.preventDefault();
-      hideAuthAlert();
+  e.preventDefault();
+  hideAuthAlert();
 
-      const inputVal = document.getElementById('authIdentifier').value.trim();
-      const passwordVal = document.getElementById('authPassword').value.trim();
-      const btn = document.getElementById('btnAuthSubmit');
+  const inputVal = document.getElementById('authIdentifier').value.trim();
+  const passwordVal = document.getElementById('authPassword').value.trim();
+  const btn = document.getElementById('btnAuthSubmit');
 
-      if (!inputVal || !passwordVal) {
-        return showAuthAlert("Username/Email dan Password wajib diisi!");
+  if (!inputVal || !passwordVal) {
+    return showAuthAlert("Username/Email dan Password wajib diisi!");
+  }
+
+  // Jika input sudah berupa email valid, gunakan langsung. Jika username, tambahkan domain default.
+  const emailVal = inputVal.includes('@') ? inputVal : `${inputVal.toLowerCase()}@literasi.id`;
+
+  btn.disabled = true;
+
+  try {
+    if (isRegisterMode) {
+      btn.innerHTML = `<span>⏳ Mendaftarkan...</span>`;
+
+      // 1. Supabase Auth Sign Up
+      const { data: authData, error: signUpError } = await _supabase.auth.signUp({
+        email: emailVal,
+        password: passwordVal,
+      });
+
+      if (signUpError) throw signUpError;
+
+      if (authData.user) {
+        // 2. Simpan Profil User ke user_profiles dengan Role Guest
+        const usernameOnly = inputVal.includes('@') ? inputVal.split('@')[0] : inputVal;
+        const { error: profileError } = await _supabase
+          .from('user_profiles')
+          .insert([
+            { id: authData.user.id, username: usernameOnly, role: 'guest' }
+          ]);
+
+        if (profileError) console.error("Profile sync error:", profileError);
       }
 
-      // Format Email Otomatis Jika Input Berupa Username Biasa
-      const emailVal = inputVal.includes('@') ? inputVal : `${inputVal.toLowerCase()}@literasi.id`;
+      showAuthAlert("Pendaftaran Guest berhasil! Silakan masuk.", false);
+      setTimeout(() => { toggleAuthMode(); }, 1200);
 
-      btn.disabled = true;
+    } else {
+      btn.innerHTML = `<span>⏳ Memverifikasi...</span>`;
 
-      try {
-        if (isRegisterMode) {
-          btn.innerHTML = `<span>⏳ Mendaftarkan...</span>`;
+      // Supabase Auth Sign In
+      const { error: loginError } = await _supabase.auth.signInWithPassword({
+        email: emailVal,
+        password: passwordVal,
+      });
 
-          // 1. Supabase Auth Sign Up
-          const { data: authData, error: signUpError } = await _supabase.auth.signUp({
-            email: emailVal,
-            password: passwordVal,
-          });
-
-          if (signUpError) throw signUpError;
-
-          if (authData.user) {
-            // 2. Simpan Profil User ke user_profiles dengan Role Guest
-            const { error: profileError } = await _supabase
-              .from('user_profiles')
-              .insert([
-                { id: authData.user.id, username: inputVal, role: 'guest' }
-              ]);
-
-            if (profileError) console.error("Profile sync:", profileError);
-          }
-
-          showAuthAlert("Pendaftaran Guest berhasil! Silakan masuk.", false);
-          setTimeout(() => { toggleAuthMode(); }, 1200);
-
-        } else {
-          btn.innerHTML = `<span>⏳ Memverifikasi...</span>`;
-
-          // Supabase Auth Sign In
-          const { error: loginError } = await _supabase.auth.signInWithPassword({
-            email: emailVal,
-            password: passwordVal,
-          });
-
-          if (loginError) {
-            btn.disabled = false;
-            btn.textContent = "Masuk Sekarang";
-            return showAuthAlert("Username/Email atau Password salah!");
-          }
-
-          checkSession();
-        }
-
-      } catch (err) {
-        console.error("Auth Error:", err);
-        showAuthAlert("Gagal: " + err.message);
-      } finally {
+      if (loginError) {
         btn.disabled = false;
-        if (!isRegisterMode) btn.textContent = "Masuk Sekarang";
+        btn.textContent = "Masuk Sekarang";
+        return showAuthAlert("Username/Email atau Password salah!");
       }
+
+      checkSession();
     }
+
+  } catch (err) {
+    console.error("Auth Error:", err);
+    showAuthAlert("Gagal: " + err.message);
+  } finally {
+    btn.disabled = false;
+    if (!isRegisterMode) btn.textContent = "Masuk Sekarang";
+  }
+}
 
     async function handleLogout() {
       if (confirm("Apakah Anda yakin ingin keluar?")) {
