@@ -259,32 +259,33 @@
     });
 
     // --- FUNGSI PEMANGGILAN DATA SUPABASE ---
-    async function loadData() {
-      document.getElementById('loading').classList.remove('hidden');
-      document.getElementById('dashboardContent').classList.add('hidden');
+async function loadData() {
+  document.getElementById('loading').classList.remove('hidden');
+  document.getElementById('dashboardContent').classList.add('hidden');
 
-      try {
-        const { data, error } = await _supabase
-          .from('asesmen_literasi')
-          .select('*');
+  try {
+    // Ambil seluruh data dari Supabase tanpa fungsi .order() yang memicu error
+    const { data, error } = await _supabase
+      .from('asesmen_literasi')
+      .select('*');
 
-        if (error) throw error;
+    if (error) throw error;
 
-        rawData = data.map(item => {
-          item.capaianLiterasi = calculateHighestLevel(item);
-          return item;
-        });
+    rawData = data.map(item => {
+      item.capaianLiterasi = calculateHighestLevel(item);
+      return item;
+    });
 
-        populateFilterOptions();
-        applyFilters();
+    populateFilterOptions();
+    applyFilters();
 
-        document.getElementById('loading').classList.add('hidden');
-        document.getElementById('dashboardContent').classList.remove('hidden');
-      } catch (err) {
-        alert("Gagal mengambil data dari Supabase: " + err.message);
-        document.getElementById('loading').classList.add('hidden');
-      }
-    }
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('dashboardContent').classList.remove('hidden');
+  } catch (err) {
+    alert("Gagal mengambil data dari Supabase: " + err.message);
+    document.getElementById('loading').classList.add('hidden');
+  }
+}
 
     function calculateHighestLevel(row) {
       let highestPassed = "Belum Terdeteksi";
