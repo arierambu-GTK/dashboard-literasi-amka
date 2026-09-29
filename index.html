@@ -34,7 +34,7 @@
       <!-- Loading State -->
       <div id="loading" class="flex flex-col justify-center items-center py-20">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-700"></div>
-        <span id="loadingText" class="mt-4 text-slate-600 font-medium">Memuat Data dari Tabel...</span>
+        <span id="loadingText" class="mt-4 text-slate-600 font-medium">Memuat Data dari Supabase...</span>
       </div>
 
       <!-- Main Content Area -->
@@ -143,6 +143,8 @@
             <div>
               <h3 id="chartBarTitle" class="text-lg font-bold text-slate-800">📊 Capaian Literasi Per Kecamatan</h3>
               <p id="chartBarSubtitle" class="text-xs text-slate-500">Perbandingan jumlah siswa pada tiap jenjang membaca per Kecamatan</p>
+              <!-- Info Filter Aktif di Atas Grafik Batang -->
+              <div id="filterInfoBar" class="mt-2 inline-block bg-indigo-50 border border-indigo-200 text-indigo-700 px-2.5 py-1 rounded-md text-[11px] font-medium"></div>
             </div>
             <div class="w-full flex justify-center py-4">
               <div class="w-full h-[380px]">
@@ -155,6 +157,8 @@
             <div>
               <h3 class="text-lg font-bold text-slate-800">🍰 Proporsi Kemampuan Membaca</h3>
               <p class="text-xs text-slate-500">Persentase total kontribusi setiap jenjang literasi membaca siswa (Sesuai Filter)</p>
+              <!-- Info Filter Aktif di Atas Grafik Proporsi -->
+              <div id="filterInfoPie" class="mt-2 inline-block bg-teal-50 border border-teal-200 text-teal-700 px-2.5 py-1 rounded-md text-[11px] font-medium"></div>
             </div>
             <div class="w-full flex justify-center py-4">
               <div class="w-full h-[380px]">
@@ -235,6 +239,24 @@
       { key: 'Cerita Pendek', label: 'Cerita Pendek', type: 'max_error', threshold: 4 },
       { key: 'Pertanyaan', label: 'Pertanyaan', type: 'min_correct', threshold: 5 }
     ];
+
+    // --- FUNGSI MENDAPATKAN STRING KETERANGAN FILTER AKTIF ---
+    function getActiveFiltersSummary() {
+      const valKecamatan = document.getElementById('filterKecamatan').value;
+      const valSekolah = document.getElementById('filterSekolah').value;
+      const valKelas = document.getElementById('filterKelas').value;
+      const valJK = document.getElementById('filterJK').value;
+      const valCapaian = document.getElementById('filterCapaian').value;
+
+      let parts = [];
+      if (valKecamatan) parts.push(`Kec. ${valKecamatan}`);
+      if (valSekolah) parts.push(valSekolah);
+      if (valKelas) parts.push(`Kelas ${valKelas}`);
+      if (valJK) parts.push(`JK: ${valJK === 'L' ? 'Laki-laki' : 'Perempuan'}`);
+      if (valCapaian) parts.push(`Level: ${valCapaian}`);
+
+      return parts.length > 0 ? parts.join(" | ") : "Semua Wilayah & Kriteria";
+    }
 
     // --- FUNGSI GENERATE NAMA FILE DENGAN FILTER AKTIF ---
     function generatePDFFileName(prefix) {
@@ -322,7 +344,7 @@
         let hasMore = true;
 
         while (hasMore) {
-          loadingText.textContent = `Memuat Data dari Tabel... (${allData.length} terambil)`;
+          loadingText.textContent = `Memuat Data dari Supabase... (${allData.length} terambil)`;
 
           const { data, error } = await _supabase
             .from(TABEL_NAME)
@@ -346,7 +368,7 @@
         console.log("Total seluruh data berhasil diambil:", allData.length);
 
         if (allData.length === 0) {
-          alert(`Tabel '${TABEL_NAME}' di Tabel masih kosong.`);
+          alert(`Tabel '${TABEL_NAME}' di Supabase masih kosong.`);
           return;
         }
 
@@ -509,6 +531,11 @@
 
         return matchesKec && matchesSek && matchesKelas && matchesJK && matchesCapaian && matchesSearch;
       });
+
+      // Update Tampilan Ringkasan & Keterangan Filter
+      const filterSummaryText = getActiveFiltersSummary();
+      document.getElementById('filterInfoBar').textContent = `📌 Filter: ${filterSummaryText}`;
+      document.getElementById('filterInfoPie').textContent = `📌 Filter: ${filterSummaryText}`;
 
       updateLiteracyStats(filteredDataCache);
       updateBarChart(filteredDataCache, kecVal, sekVal);
@@ -679,7 +706,7 @@
       tbody.appendChild(fragment);
     }
 
-    // --- TOMBOL 1: EKSPOR GRAFIK KE PDF (DENGAN NAMA FILE SESUAI FILTER) ---
+    // --- TOMBOL 1: EKSPOR GRAFIK KE PDF ---
     function exportChartsDirectPDF() {
       if (filteredDataCache.length === 0) return alert("Tidak ada data grafik untuk diekspor.");
       loadHtml2PdfScript(() => {
@@ -691,6 +718,8 @@
         const valKecamatan = document.getElementById('filterKecamatan').value || "Semua Kecamatan";
         const valSekolah = document.getElementById('filterSekolah').value || "Semua Sekolah";
         const valKelas = document.getElementById('filterKelas').value ? "Kelas " + document.getElementById('filterKelas').value : "Semua Kelas";
+        const filterSummaryText = getActiveFiltersSummary();
+
         const totalSiswa = filteredDataCache.length;
         const counts = { 'Huruf': 0, 'Suku Kata': 0, 'Kata': 0, 'Paragraf': 0, 'Cerita Pendek': 0, 'Pertanyaan': 0 };
         filteredDataCache.forEach(item => { if (counts[item.capaianLiterasi] !== undefined) counts[item.capaianLiterasi]++; });
@@ -714,8 +743,10 @@
                 <td style="text-align: right; border: none; padding: 0; font-weight: bold;">Tanggal Asesmen: ${tanggalAsesmenVal}</td>
               </tr>
             </table>
-            <div style="margin-bottom: 15px;">
-              <h3 style="font-size: 11px; font-weight: bold; margin: 0 0 6px 0; color: #1e293b;">📊 Chart Distribusi Capaian Literasi Siswa</h3>
+            
+            <!-- Kata 'Chart' dihilangkan sesuai instruksi -->
+            <div style="margin-bottom: 12px;">
+              <h3 style="font-size: 11px; font-weight: bold; margin: 0 0 6px 0; color: #1e293b;">📊 Distribusi Capaian Literasi Siswa</h3>
               <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 8px;">
                 <tr style="background-color: #f8fafc;">
                   <td style="border: 1px solid #cbd5e1; padding: 6px; width: 14%;"><div style="color: #475569; font-weight: bold;">TOTAL SISWA</div><div style="font-size: 14px; font-weight: bold; color: #0f172a; margin-top:2px;">${totalSiswa}</div></td>
@@ -728,9 +759,23 @@
                 </tr>
               </table>
             </div>
+
+            <!-- Tampilan Keterangan Filter Di Atas Grafik Dalam PDF -->
             <div style="display: flex; gap: 10px; margin-bottom: 15px; page-break-inside: avoid;">
-              ${barImgBase64 ? `<div style="flex: 1; border: 1px solid #e2e8f0; padding: 8px; border-radius: 6px; text-align: center;"><img src="${barImgBase64}" style="max-width: 100%; max-height: 250px; margin: 0 auto; object-fit: contain;" /></div>` : ''}
-              ${pieImgBase64 ? `<div style="flex: 1; border: 1px solid #e2e8f0; padding: 8px; border-radius: 6px; text-align: center;"><img src="${pieImgBase64}" style="max-width: 100%; max-height: 250px; margin: 0 auto; object-fit: contain;" /></div>` : ''}
+              ${barImgBase64 ? `
+                <div style="flex: 1; border: 1px solid #e2e8f0; padding: 8px; border-radius: 6px; text-align: center;">
+                  <div style="font-size: 8px; font-weight: bold; color: #4338ca; margin-bottom: 4px; background: #e0e7ff; padding: 3px; border-radius: 3px;">
+                    📌 Capaian Literasi | Filter: ${filterSummaryText}
+                  </div>
+                  <img src="${barImgBase64}" style="max-width: 100%; max-height: 240px; margin: 0 auto; object-fit: contain;" />
+                </div>` : ''}
+              ${pieImgBase64 ? `
+                <div style="flex: 1; border: 1px solid #e2e8f0; padding: 8px; border-radius: 6px; text-align: center;">
+                  <div style="font-size: 8px; font-weight: bold; color: #0f766e; margin-bottom: 4px; background: #ccfbf1; padding: 3px; border-radius: 3px;">
+                    📌 Proporsi Kemampuan | Filter: ${filterSummaryText}
+                  </div>
+                  <img src="${pieImgBase64}" style="max-width: 100%; max-height: 240px; margin: 0 auto; object-fit: contain;" />
+                </div>` : ''}
             </div>
           </div>
         `;
@@ -741,7 +786,7 @@
       });
     }
 
-    // --- TOMBOL 2: EKSPOR TABEL RINCIAN KE PDF (DENGAN NAMA FILE SESUAI FILTER) ---
+    // --- TOMBOL 2: EKSPOR TABEL RINCIAN KE PDF ---
     function exportTableDirectPDF() {
       if (filteredDataCache.length === 0) return alert("Tidak ada data rincian siswa yang tampil untuk diekspor.");
 
@@ -762,7 +807,6 @@
             const currentDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
             const tanggalAsesmenVal = filteredDataCache[0] ? (filteredDataCache[0]["Tanggal Asesmen"] || '-') : '-';
 
-            // Judul Header Laporan
             doc.setFontSize(13);
             doc.setFont("helvetica", "bold");
             doc.text("RINCIAN HASIL ASESMEN MEMBACA SISWA", doc.internal.pageSize.getWidth() / 2, 12, { align: "center" });
@@ -778,7 +822,6 @@
             doc.text(`Tanggal Unduh: ${currentDate} | Total Data: ${filteredDataCache.length} Siswa`, 14, 23);
             doc.text(`Tanggal Asesmen: ${tanggalAsesmenVal}`, doc.internal.pageSize.getWidth() - 14, 23, { align: "right" });
 
-            // Format Data Kolom Tabel
             const tableHeaders = [["No", "Nama Siswa", "Nama Guru", "Sekolah / Kelas", "Huruf", "Suku Kata", "Kata", "Paragraf", "Cerita Pendek", "Pertanyaan"]];
             const tableBody = filteredDataCache.map((item, index) => [
               index + 1,
@@ -793,7 +836,6 @@
               item["Pertanyaan"] ?? '-'
             ]);
 
-            // Ekspor Tabel Native via AutoTable
             doc.autoTable({
               startY: 26,
               head: tableHeaders,
