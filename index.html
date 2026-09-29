@@ -594,7 +594,7 @@
         let hasMore = true;
 
         while (hasMore) {
-          loadingText.textContent = `Memuat Data... (${allData.length} terambil)`;
+          loadingText.textContent = `Memuat Data... (${allData.length} Data)`;
 
           const { data, error } = await _supabase
             .from(TABEL_NAME)
