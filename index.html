@@ -10,7 +10,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="icon" href="data:,">
   <style>
-    /* Prevent rubber-band scroll on mobile devices */
     body {
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
@@ -66,7 +65,7 @@
   <!-- ================= AREA DASHBOARD ================= -->
   <div id="mainDashboard" class="hidden flex-1 flex flex-col">
     
-    <!-- Top Header Bar (Sangat Ringkas di HP) -->
+    <!-- Top Header Bar -->
     <header class="bg-indigo-800 text-white sticky top-0 z-30 shadow-md">
       <div class="max-w-7xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between gap-3">
         <div class="flex items-center gap-2.5">
@@ -105,7 +104,7 @@
       <!-- Main Dashboard Content -->
       <div id="dashboardContent" class="hidden space-y-4 sm:space-y-6">
 
-        <!-- Filter Card (Accordion/Collapsible-friendly di HP) -->
+        <!-- Filter Card -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 transition-all">
           <div class="flex items-center justify-between mb-3 cursor-pointer sm:cursor-default" onclick="toggleFilterMobile()">
             <div class="flex items-center gap-2">
@@ -157,7 +156,7 @@
           </div>
         </div>
 
-        <!-- Kartu KPI Ringkasan (Grid 2 Kolom di Mobile, 7 Kolom di Desktop) -->
+        <!-- Kartu KPI Ringkasan -->
         <div id="sectionStats" class="space-y-2">
           <div class="flex items-center justify-between px-1">
             <h2 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
@@ -169,7 +168,6 @@
           </div>
 
           <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
-            <!-- Total Siswa (Full-width di Mobile) -->
             <div class="bg-slate-900 text-white p-3 rounded-2xl col-span-2 sm:col-span-1 shadow-sm flex sm:flex-col justify-between items-center sm:items-start">
               <div>
                 <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Siswa</p>
@@ -178,7 +176,6 @@
               <span class="text-[10px] bg-slate-800 px-2 py-0.5 rounded-full text-slate-300 border border-slate-700">Filtered</span>
             </div>
 
-            <!-- Huruf -->
             <div class="bg-orange-50/80 border border-orange-200 p-3 rounded-2xl text-left relative overflow-hidden">
               <p class="text-[10px] font-bold text-orange-700 uppercase tracking-tight">Huruf</p>
               <div class="flex items-baseline justify-between mt-1">
@@ -187,7 +184,6 @@
               </div>
             </div>
 
-            <!-- Suku Kata -->
             <div class="bg-yellow-50/80 border border-yellow-200 p-3 rounded-2xl text-left relative overflow-hidden">
               <p class="text-[10px] font-bold text-yellow-800 uppercase tracking-tight">Suku Kata</p>
               <div class="flex items-baseline justify-between mt-1">
@@ -196,7 +192,6 @@
               </div>
             </div>
 
-            <!-- Kata -->
             <div class="bg-amber-50/80 border border-amber-200 p-3 rounded-2xl text-left relative overflow-hidden">
               <p class="text-[10px] font-bold text-amber-700 uppercase tracking-tight">Kata</p>
               <div class="flex items-baseline justify-between mt-1">
@@ -205,7 +200,6 @@
               </div>
             </div>
 
-            <!-- Paragraf -->
             <div class="bg-emerald-50/80 border border-emerald-200 p-3 rounded-2xl text-left relative overflow-hidden">
               <p class="text-[10px] font-bold text-emerald-700 uppercase tracking-tight">Paragraf</p>
               <div class="flex items-baseline justify-between mt-1">
@@ -214,7 +208,6 @@
               </div>
             </div>
 
-            <!-- Cerita Pendek -->
             <div class="bg-teal-50/80 border border-teal-200 p-3 rounded-2xl text-left relative overflow-hidden">
               <p class="text-[10px] font-bold text-teal-700 uppercase tracking-tight">Cerita Pendek</p>
               <div class="flex items-baseline justify-between mt-1">
@@ -223,7 +216,6 @@
               </div>
             </div>
 
-            <!-- Pertanyaan -->
             <div class="bg-blue-50/80 border border-blue-200 p-3 rounded-2xl text-left col-span-2 sm:col-span-1 relative overflow-hidden">
               <p class="text-[10px] font-bold text-blue-700 uppercase tracking-tight">Pertanyaan</p>
               <div class="flex items-baseline justify-between mt-1">
@@ -242,7 +234,7 @@
               <p class="text-[11px] text-slate-500">Perbandingan jenjang membaca siswa</p>
             </div>
             <button onclick="exportChartsDirectPDF()" id="btnExportChartsPDF" class="w-full sm:w-auto bg-indigo-600 active:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-md shadow-indigo-500/20 flex items-center justify-center gap-2">
-              <span>📊</span> Ekspor PDF Grafik
+              <span>📊</span> Ekspor PDF Grafik (Portrait)
             </button>
           </div>
 
@@ -270,7 +262,7 @@
           </div>
         </div>
 
-        <!-- Tabel Detail Data (Aksen Mobile Card-View Friendly) -->
+        <!-- Tabel Detail Data -->
         <div id="tableSection" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
           <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2.5">
             <div>
@@ -280,7 +272,7 @@
             <div class="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
               <input type="text" id="searchInput" placeholder="Cari nama, sekolah, kecamatan..." class="bg-slate-50 border border-slate-300 text-xs rounded-xl p-2.5 w-full sm:w-64 focus:ring-2 focus:ring-indigo-500 outline-none">
               <button onclick="exportTableDirectPDF()" id="btnExportTablePDF" class="w-full sm:w-auto bg-emerald-600 active:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 whitespace-nowrap">
-                <span>📄</span> Ekspor Rincian PDF
+                <span>📄</span> Ekspor Rincian PDF (Portrait)
               </button>
             </div>
           </div>
@@ -311,7 +303,7 @@
       </div>
     </main>
 
-    <!-- Bottom Navigation Bar Khusus Tampilan Mobile (Gaya E-TernakTAB) -->
+    <!-- Bottom Navigation Bar Khusus Tampilan Mobile -->
     <nav class="sm:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 z-40 px-6 py-2 shadow-lg">
       <div class="flex justify-around items-center">
         <button onclick="scrollToSection('sectionStats')" class="flex flex-col items-center gap-1 text-indigo-600 active:scale-95 transition">
@@ -379,7 +371,6 @@
       }
     });
 
-    // --- NAVIGASI HP / MOBILE HELPER ---
     function scrollToSection(id) {
       const el = document.getElementById(id);
       if (el && !el.classList.contains('hidden')) {
@@ -401,7 +392,6 @@
       }
     }
 
-    // --- MANAJEMEN SESI & AKUN ---
     function checkSession() {
       const activeUser = JSON.parse(sessionStorage.getItem('dashboard_user'));
       if (activeUser) {
@@ -412,7 +402,6 @@
         applyRolePermissions(activeUser.role);
         loadData();
 
-        // Sembunyikan filter group secara default pada tampilan HP pertama kali
         if (window.innerWidth < 640) {
           const group = document.getElementById('filterInputsGroup');
           if (group) group.classList.add('hidden');
@@ -564,7 +553,6 @@
       }
     }
 
-    // --- PEMANGGILAN DATA ASESMEN ---
     async function loadData() {
       const loadingEl = document.getElementById('loading');
       const contentEl = document.getElementById('dashboardContent');
@@ -888,7 +876,8 @@
         options: {
           animation: false,
           responsive: true,
-          maintainAspectRatio: false,
+          maintainAspectRatio: true,
+          aspectRatio: 1, // Kunci Rasio Lingkaran Bulat Sempurna
           plugins: {
             legend: { position: 'bottom', labels: { boxWidth: 6, padding: 6, font: { size: 8, weight: 'bold' } } },
             tooltip: {
@@ -945,7 +934,7 @@
       tbody.appendChild(fragment);
     }
 
-    // --- FUNGSI AUXILIARY ---
+    // --- FUNGSI AUXILIARY FILTER & PDF ---
     function getActiveFiltersSummary() {
       const valKecamatan = document.getElementById('filterKecamatan').value;
       const valSekolah = document.getElementById('filterSekolah').value;
@@ -1017,7 +1006,7 @@
       document.head.appendChild(script);
     }
 
-    // --- EKSPOR GRAFIK PDF ---
+    // --- EKSPOR GRAFIK KE PDF (FORMAT PORTRAIT, RAPI, TANPA TERPOTONG) ---
     function exportChartsDirectPDF() {
       if (filteredDataCache.length === 0) return alert("Tidak ada data grafik untuk diekspor.");
       
@@ -1025,7 +1014,7 @@
         const btn = document.getElementById('btnExportChartsPDF');
         const originalText = btn.innerHTML;
         btn.disabled = true;
-        btn.innerHTML = `<span>⏳ Menyiapkan PDF Grafik...</span>`;
+        btn.innerHTML = `<span>⏳ Menyiapkan PDF Portrait...</span>`;
 
         setTimeout(() => {
           try {
@@ -1041,65 +1030,81 @@
             const currentDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
             const tanggalAsesmenVal = filteredDataCache[0] ? (filteredDataCache[0]["Tanggal Asesmen"] || '-') : '-';
             
-            const barImgBase64 = chartBarKecamatanInstance ? chartBarKecamatanInstance.toBase64Image('image/png', 1.0) : '';
-            const pieImgBase64 = chartProporsiMembacaInstance ? chartProporsiMembacaInstance.toBase64Image('image/png', 1.0) : '';
+            // Gambar Grafik diambil dengan kompresi teroptimasi
+            const barImgBase64 = chartBarKecamatanInstance ? chartBarKecamatanInstance.toBase64Image('image/jpeg', 0.85) : '';
+            const pieImgBase64 = chartProporsiMembacaInstance ? chartProporsiMembacaInstance.toBase64Image('image/jpeg', 0.85) : '';
 
+            // Layout Khusus A4 Portrait
             let htmlContent = `
-              <div style="padding: 15px; font-family: Arial, sans-serif; color: #333; background: #fff;">
-                <div style="text-align: center; margin-bottom: 10px; border-bottom: 2px solid #333; padding-bottom: 8px;">
-                  <h2 style="margin: 0; font-size: 16px; font-weight: bold; text-transform: uppercase;">Laporan Grafik Capaian Literasi Siswa</h2>
-                  <p style="margin: 4px 0 0 0; font-size: 11px; font-weight: bold; color: #4338ca;">
+              <div style="width: 190mm; padding: 4mm; font-family: Arial, sans-serif; color: #1e293b; background: #fff; box-sizing: border-box;">
+                
+                <!-- Kop / Header -->
+                <div style="text-align: center; margin-bottom: 8px; border-bottom: 2px solid #334155; padding-bottom: 6px;">
+                  <h2 style="margin: 0; font-size: 14px; font-weight: bold; text-transform: uppercase; color: #0f172a;">Laporan Capaian Literasi Siswa</h2>
+                  <p style="margin: 3px 0 0 0; font-size: 10px; font-weight: bold; color: #4338ca;">
                     Sekolah: ${valSekolah} | ${valKelas} | Kecamatan: ${valKecamatan}
                   </p>
                 </div>
-                <table style="width: 100%; font-size: 9px; color: #555; margin-bottom: 12px; border: none;">
+
+                <!-- Info Meta -->
+                <table style="width: 100%; font-size: 8px; color: #64748b; margin-bottom: 10px;">
                   <tr>
-                    <td style="text-align: left; border: none; padding: 0;">Tanggal Unduh: ${currentDate} | Total Data Tampil: ${totalSiswa} Siswa</td>
-                    <td style="text-align: right; border: none; padding: 0; font-weight: bold;">Tanggal Asesmen: ${tanggalAsesmenVal}</td>
+                    <td style="text-align: left; padding: 0;">Tanggal Unduh: ${currentDate} | Total: ${totalSiswa} Siswa</td>
+                    <td style="text-align: right; padding: 0; font-weight: bold; color: #334155;">Tanggal Asesmen: ${tanggalAsesmenVal}</td>
                   </tr>
                 </table>
                 
-                <div style="margin-bottom: 12px;">
-                  <h3 style="font-size: 11px; font-weight: bold; margin: 0 0 6px 0; color: #1e293b;">📊 Distribusi Capaian Literasi Siswa</h3>
+                <!-- Ringkasan Angka (Tabel Ringkas) -->
+                <div style="margin-bottom: 12px; page-break-inside: avoid;">
+                  <h3 style="font-size: 10px; font-weight: bold; margin: 0 0 5px 0; color: #0f172a;">📊 Ringkasan Capaian Siswa</h3>
                   <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 8px;">
                     <tr style="background-color: #f8fafc;">
-                      <td style="border: 1px solid #cbd5e1; padding: 6px; width: 14%;"><div style="color: #475569; font-weight: bold;">TOTAL SISWA</div><div style="font-size: 14px; font-weight: bold; color: #0f172a; margin-top:2px;">${totalSiswa}</div></td>
-                      <td style="border: 1px solid #fed7aa; padding: 6px; width: 14%; background-color: #fff7ed;"><div style="color: #c2410c; font-weight: bold;">HURUF</div><div style="font-size: 14px; font-weight: bold; color: #c2410c; margin-top:2px;">${counts['Huruf']}</div></td>
-                      <td style="border: 1px solid #fef08a; padding: 6px; width: 14%; background-color: #fefce8;"><div style="color: #a16207; font-weight: bold;">SUKU KATA</div><div style="font-size: 14px; font-weight: bold; color: #a16207; margin-top:2px;">${counts['Suku Kata']}</div></td>
-                      <td style="border: 1px solid #fde68a; padding: 6px; width: 14%; background-color: #fffbeb;"><div style="color: #b45309; font-weight: bold;">KATA</div><div style="font-size: 14px; font-weight: bold; color: #b45309; margin-top:2px;">${counts['Kata']}</div></td>
-                      <td style="border: 1px solid #a7f3d0; padding: 6px; width: 14%; background-color: #ecfdf5;"><div style="color: #047857; font-weight: bold;">PARAGRAF</div><div style="font-size: 14px; font-weight: bold; color: #047857; margin-top:2px;">${counts['Paragraf']}</div></td>
-                      <td style="border: 1px solid #99f6e4; padding: 6px; width: 14%; background-color: #f0fdfa;"><div style="color: #0f766e; font-weight: bold;">CERITA PENDEK</div><div style="font-size: 14px; font-weight: bold; color: #0f766e; margin-top:2px;">${counts['Cerita Pendek']}</div></td>
-                      <td style="border: 1px solid #bfdbfe; padding: 6px; width: 14%; background-color: #eff6ff;"><div style="color: #1d4ed8; font-weight: bold;">PERTANYAAN</div><div style="font-size: 14px; font-weight: bold; color: #1d4ed8; margin-top:2px;">${counts['Pertanyaan']}</div></td>
+                      <td style="border: 1px solid #cbd5e1; padding: 4px; width: 14%;"><div style="color: #475569; font-size: 7px; font-weight: bold;">TOTAL</div><div style="font-size: 11px; font-weight: bold; color: #0f172a; margin-top:1px;">${totalSiswa}</div></td>
+                      <td style="border: 1px solid #fed7aa; padding: 4px; width: 14%; background-color: #fff7ed;"><div style="color: #c2410c; font-size: 7px; font-weight: bold;">HURUF</div><div style="font-size: 11px; font-weight: bold; color: #c2410c; margin-top:1px;">${counts['Huruf']}</div></td>
+                      <td style="border: 1px solid #fef08a; padding: 4px; width: 14%; background-color: #fefce8;"><div style="color: #a16207; font-size: 7px; font-weight: bold;">SUKU KATA</div><div style="font-size: 11px; font-weight: bold; color: #a16207; margin-top:1px;">${counts['Suku Kata']}</div></td>
+                      <td style="border: 1px solid #fde68a; padding: 4px; width: 14%; background-color: #fffbeb;"><div style="color: #b45309; font-size: 7px; font-weight: bold;">KATA</div><div style="font-size: 11px; font-weight: bold; color: #b45309; margin-top:1px;">${counts['Kata']}</div></td>
+                      <td style="border: 1px solid #a7f3d0; padding: 4px; width: 14%; background-color: #ecfdf5;"><div style="color: #047857; font-size: 7px; font-weight: bold;">PARAGRAF</div><div style="font-size: 11px; font-weight: bold; color: #047857; margin-top:1px;">${counts['Paragraf']}</div></td>
+                      <td style="border: 1px solid #99f6e4; padding: 4px; width: 14%; background-color: #f0fdfa;"><div style="color: #0f766e; font-size: 7px; font-weight: bold;">CERITA</div><div style="font-size: 11px; font-weight: bold; color: #0f766e; margin-top:1px;">${counts['Cerita Pendek']}</div></td>
+                      <td style="border: 1px solid #bfdbfe; padding: 4px; width: 14%; background-color: #eff6ff;"><div style="color: #1d4ed8; font-size: 7px; font-weight: bold;">PERTANYAAN</div><div style="font-size: 11px; font-weight: bold; color: #1d4ed8; margin-top:1px;">${counts['Pertanyaan']}</div></td>
                     </tr>
                   </table>
                 </div>
 
-                <div style="display: flex; gap: 10px; margin-bottom: 15px; page-break-inside: avoid;">
+                <!-- Area Grafik Susun Vertikal (Portrait Safe) -->
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                  
+                  <!-- Grafik Batang -->
                   ${barImgBase64 ? `
-                    <div style="flex: 1; border: 1px solid #e2e8f0; padding: 8px; border-radius: 6px; text-align: center;">
-                      <div style="font-size: 8px; font-weight: bold; color: #4338ca; margin-bottom: 4px; background: #e0e7ff; padding: 3px; border-radius: 3px;">
-                        📌 Capaian Literasi | Filter: ${filterSummaryText}
+                    <div style="border: 1px solid #e2e8f0; padding: 6px; border-radius: 8px; text-align: center; page-break-inside: avoid;">
+                      <div style="font-size: 8px; font-weight: bold; color: #4338ca; margin-bottom: 4px; background: #e0e7ff; padding: 3px; border-radius: 4px;">
+                        📌 Grafik Capaian Literasi | Filter: ${filterSummaryText}
                       </div>
-                      <img src="${barImgBase64}" style="width: 100%; max-height: 230px; margin: 0 auto; object-fit: contain;" />
+                      <img src="${barImgBase64}" style="width: 100%; max-height: 200px; object-fit: contain; display: block; margin: 0 auto;" />
                     </div>` : ''}
+
+                  <!-- Grafik Donat (Dijaga Rasio Bulatnya) -->
                   ${pieImgBase64 ? `
-                    <div style="flex: 1; border: 1px solid #e2e8f0; padding: 8px; border-radius: 6px; text-align: center;">
-                      <div style="font-size: 8px; font-weight: bold; color: #0f766e; margin-bottom: 4px; background: #ccfbf1; padding: 3px; border-radius: 3px;">
-                        📌 Proporsi Kemampuan | Filter: ${filterSummaryText}
+                    <div style="border: 1px solid #e2e8f0; padding: 6px; border-radius: 8px; text-align: center; page-break-inside: avoid;">
+                      <div style="font-size: 8px; font-weight: bold; color: #0f766e; margin-bottom: 4px; background: #ccfbf1; padding: 3px; border-radius: 4px;">
+                        📌 Proporsi Kemampuan Membaca | Filter: ${filterSummaryText}
                       </div>
-                      <img src="${pieImgBase64}" style="width: 100%; max-height: 230px; margin: 0 auto; object-fit: contain;" />
+                      <div style="width: 100%; max-width: 220px; margin: 0 auto;">
+                        <img src="${pieImgBase64}" style="width: 100%; height: auto; object-fit: contain; display: block; margin: 0 auto;" />
+                      </div>
                     </div>` : ''}
+
                 </div>
+
               </div>
             `;
 
-            const fileNameStr = generatePDFFileName("Grafik_Literasi");
+            const fileNameStr = generatePDFFileName("Grafik_Literasi_Portrait");
             const opt = { 
-              margin: [10, 10, 15, 10], 
+              margin: [8, 8, 8, 8], 
               filename: fileNameStr, 
-              image: { type: 'jpeg', quality: 0.98 }, 
-              html2canvas: { scale: 2, useCORS: true, logging: false }, 
-              jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } 
+              image: { type: 'jpeg', quality: 0.85 }, 
+              html2canvas: { scale: 1.5, useCORS: true, logging: false }, 
+              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
             };
 
             html2pdf().from(htmlContent).set(opt).save().then(() => { 
@@ -1116,7 +1121,7 @@
       });
     }
 
-    // --- EKSPOR TABEL PDF ---
+    // --- EKSPOR TABEL RINCIAN KE PDF (FORMAT PORTRAIT) ---
     function exportTableDirectPDF() {
       if (filteredDataCache.length === 0) return alert("Tidak ada data rincian siswa yang tampil untuk diekspor.");
 
@@ -1124,12 +1129,13 @@
         const btn = document.getElementById('btnExportTablePDF');
         const originalText = btn.innerHTML;
         btn.disabled = true;
-        btn.innerHTML = `<span>⏳ Menyiapkan PDF (${filteredDataCache.length} Data)...</span>`;
+        btn.innerHTML = `<span>⏳ Menyiapkan PDF Portrait (${filteredDataCache.length} Data)...</span>`;
 
         setTimeout(() => {
           try {
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+            // Gunakan orientation: 'portrait'
+            const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
             const valKecamatan = document.getElementById('filterKecamatan').value || "Semua Kecamatan";
             const valSekolah = document.getElementById('filterSekolah').value || "Semua Sekolah";
@@ -1137,27 +1143,28 @@
             const currentDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
             const tanggalAsesmenVal = filteredDataCache[0] ? (filteredDataCache[0]["Tanggal Asesmen"] || '-') : '-';
 
-            doc.setFontSize(13);
+            // Header Dokumen
+            doc.setFontSize(11);
             doc.setFont("helvetica", "bold");
-            doc.text("RINCIAN HASIL ASESMEN MEMBACA SISWA", doc.internal.pageSize.getWidth() / 2, 12, { align: "center" });
+            doc.text("RINCIAN HASIL ASESMEN MEMBACA SISWA", doc.internal.pageSize.getWidth() / 2, 10, { align: "center" });
 
-            doc.setFontSize(9);
+            doc.setFontSize(8);
             doc.setFont("helvetica", "bold");
             doc.setTextColor(67, 56, 202);
-            doc.text(`Sekolah: ${valSekolah} | ${valKelas} | Kecamatan: ${valKecamatan}`, doc.internal.pageSize.getWidth() / 2, 17, { align: "center" });
+            doc.text(`Sekolah: ${valSekolah} | ${valKelas} | Kecamatan: ${valKecamatan}`, doc.internal.pageSize.getWidth() / 2, 15, { align: "center" });
             
-            doc.setFontSize(8);
+            doc.setFontSize(7);
             doc.setFont("helvetica", "normal");
             doc.setTextColor(85, 85, 85);
-            doc.text(`Tanggal Unduh: ${currentDate} | Total Data: ${filteredDataCache.length} Siswa`, 14, 23);
-            doc.text(`Tanggal Asesmen: ${tanggalAsesmenVal}`, doc.internal.pageSize.getWidth() - 14, 23, { align: "right" });
+            doc.text(`Tanggal Unduh: ${currentDate} | Total: ${filteredDataCache.length} Siswa`, 10, 20);
+            doc.text(`Tanggal Asesmen: ${tanggalAsesmenVal}`, doc.internal.pageSize.getWidth() - 10, 20, { align: "right" });
 
-            const tableHeaders = [["No", "Nama Siswa", "Nama Guru", "Sekolah / Kelas", "Huruf", "Suku Kata", "Kata", "Paragraf", "Cerita Pendek", "Pertanyaan"]];
+            // Tabel disesuaikan untuk lebar A4 Portrait (210mm - margin)
+            const tableHeaders = [["No", "Nama Siswa", "Sekolah / Kelas", "Huruf", "Suku Kata", "Kata", "Paragraf", "Cerita", "Tanya"]];
             const tableBody = filteredDataCache.map((item, index) => [
               index + 1,
               item["Nama Siswa"] || '-',
-              item["Nama Guru"] || '-',
-              `${item["Nama Sekolah"] || '-'} (${item["Kelas"] || '-'})`,
+              `${item["Nama Sekolah"] || '-'}\n(Kelas ${item["Kelas"] || '-'})`,
               item["Huruf"] ?? '-',
               item["Suku Kata"] ?? '-',
               item["Kata"] ?? '-',
@@ -1167,34 +1174,37 @@
             ]);
 
             doc.autoTable({
-              startY: 26,
+              startY: 23,
+              margin: { left: 10, right: 10 },
               head: tableHeaders,
               body: tableBody,
               theme: 'grid',
-              styles: { fontSize: 7.5, cellPadding: 2 },
+              styles: { fontSize: 7, cellPadding: 1.5, overflow: 'linebreak' },
               headStyles: { fillColor: [241, 245, 249], textColor: [51, 65, 85], fontStyle: 'bold', halign: 'center' },
               columnStyles: {
-                0: { halign: 'center', cellWidth: 10 },
+                0: { halign: 'center', cellWidth: 8 },
+                1: { cellWidth: 42 },
+                2: { cellWidth: 45 },
+                3: { halign: 'center' },
                 4: { halign: 'center' },
                 5: { halign: 'center' },
                 6: { halign: 'center' },
                 7: { halign: 'center' },
-                8: { halign: 'center' },
-                9: { halign: 'center' }
+                8: { halign: 'center' }
               },
               didDrawPage: (data) => {
                 const pageCount = doc.internal.getNumberOfPages();
-                doc.setFontSize(7);
+                doc.setFontSize(6.5);
                 doc.setTextColor(128, 128, 128);
                 doc.text(
-                  `Dicetak dari Dashboard Literasi Asesmen Siswa | Halaman ${data.pageNumber} dari ${pageCount}`,
-                  14,
-                  doc.internal.pageSize.getHeight() - 8
+                  `Dashboard Literasi Asesmen Siswa | Halaman ${data.pageNumber} dari ${pageCount}`,
+                  10,
+                  doc.internal.pageSize.getHeight() - 6
                 );
               }
             });
 
-            const fileNameStr = generatePDFFileName("Rincian_Asesmen");
+            const fileNameStr = generatePDFFileName("Rincian_Asesmen_Portrait");
             doc.save(fileNameStr);
 
           } catch (err) {
