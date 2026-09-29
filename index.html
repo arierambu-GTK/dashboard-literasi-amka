@@ -238,27 +238,43 @@
             </button>
           </div>
 
-          <!-- Container Grafik -->
+          <!-- Container Grafik (Background Putih Bersih) -->
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            
+            <!-- Card 1: Grafik Batang -->
             <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
               <div>
                 <h3 id="chartBarTitle" class="text-sm font-bold text-slate-800">📊 Capaian Per Kecamatan</h3>
-                <p id="chartBarSubtitle" class="text-[10px] text-slate-500 mb-2">Jumlah siswa pada tiap jenjang</p>
+                <p id="chartBarSubtitle" class="text-[10px] text-slate-500">Jumlah siswa pada tiap jenjang</p>
+                <!-- Badge Informasi FilterAktif -->
+                <div id="filterInfoBar" class="mt-2 inline-block bg-indigo-50 border border-indigo-200 text-indigo-700 px-2 py-0.5 rounded-md text-[10px] font-semibold">
+                  📌 Filter: Semua Wilayah
+                </div>
               </div>
-              <div class="relative w-full h-[260px] sm:h-[340px]">
+              <div class="relative w-full h-[260px] sm:h-[340px] mt-2 bg-white rounded-xl p-1">
                 <canvas id="chartBarKecamatan"></canvas>
               </div>
             </div>
 
+            <!-- Card 2: Grafik Donat (Tepat di Tengah & Background Putih) -->
             <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
               <div>
-                <h3 class="text-sm font-bold text-slate-800">🍰 Proporsi Kemampuan</h3>
-                <p class="text-[10px] text-slate-500 mb-2">Persentase kontribusi jenjang membaca</p>
+                <h3 class="text-sm font-bold text-slate-800">🍰 Proporsi Kemampuan Siswa</h3>
+                <p class="text-[10px] text-slate-500">Persentase kontribusi jenjang membaca</p>
+                <!-- Badge Informasi FilterAktif -->
+                <div id="filterInfoPie" class="mt-2 inline-block bg-teal-50 border border-teal-200 text-teal-700 px-2 py-0.5 rounded-md text-[10px] font-semibold">
+                  📌 Filter: Semua Wilayah
+                </div>
               </div>
-              <div class="relative w-full h-[260px] sm:h-[340px]">
-                <canvas id="chartProporsiMembaca"></canvas>
+              
+              <!-- Wrapper Donat Presisi di Tengah -->
+              <div class="w-full flex-1 flex items-center justify-center my-auto min-h-[260px] sm:min-h-[340px] bg-white rounded-xl p-2">
+                <div class="w-full max-w-[260px] sm:max-w-[300px] aspect-square flex items-center justify-center">
+                  <canvas id="chartProporsiMembaca"></canvas>
+                </div>
               </div>
             </div>
+
           </div>
         </div>
 
@@ -338,6 +354,19 @@
     let chartProporsiMembacaInstance = null;
     let searchTimeout = null;
     let isRegisterMode = false;
+
+    // Plugin Custom Canvas Background Putih
+    const whiteBackgroundPlugin = {
+      id: 'customCanvasBackgroundColor',
+      beforeDraw: (chart) => {
+        const {ctx} = chart;
+        ctx.save();
+        ctx.globalCompositeOperation = 'destination-over';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, chart.width, chart.height);
+        ctx.restore();
+      }
+    };
 
     const CATEGORY_COLORS = {
       'Huruf': '#f97316',
@@ -568,7 +597,7 @@
         let hasMore = true;
 
         while (hasMore) {
-          loadingText.textContent = `Memuat Data... (${allData.length} terambil)`;
+          loadingText.textContent = `Memuat Data... (${allData.length} data)`;
 
           const { data, error } = await _supabase
             .from(TABEL_NAME)
@@ -757,6 +786,8 @@
 
       const filterSummaryText = getActiveFiltersSummary();
       document.getElementById('activeFilterBadge').textContent = filterSummaryText;
+      document.getElementById('filterInfoBar').textContent = `📌 Filter: ${filterSummaryText}`;
+      document.getElementById('filterInfoPie').textContent = `📌 Filter: ${filterSummaryText}`;
 
       updateLiteracyStats(filteredDataCache);
       updateBarChart(filteredDataCache, kecVal, sekVal);
@@ -843,6 +874,7 @@
           labels: groupList.map(g => (g === 'Tidak Ada Data' ? g : labelPrefix + g)),
           datasets: datasets
         },
+        plugins: [whiteBackgroundPlugin],
         options: {
           animation: false,
           responsive: true,
@@ -873,11 +905,12 @@
           labels: categories,
           datasets: [{ data: counts, backgroundColor: bgColors, hoverOffset: 4, borderWidth: 2, borderColor: '#ffffff' }]
         },
+        plugins: [whiteBackgroundPlugin],
         options: {
           animation: false,
           responsive: true,
           maintainAspectRatio: true,
-          aspectRatio: 1, // Kunci Rasio Lingkaran Bulat Sempurna
+          aspectRatio: 1, // Kunci Donat Bulat Sempurna
           plugins: {
             legend: { position: 'bottom', labels: { boxWidth: 6, padding: 6, font: { size: 8, weight: 'bold' } } },
             tooltip: {
@@ -1006,7 +1039,7 @@
       document.head.appendChild(script);
     }
 
-    // --- EKSPOR GRAFIK KE PDF (FORMAT PORTRAIT, RAPI, TANPA TERPOTONG) ---
+    // --- EKSPOR GRAFIK KE PDF (FORMAT PORTRAIT & LATAR PUTIH BERSITH) ---
     function exportChartsDirectPDF() {
       if (filteredDataCache.length === 0) return alert("Tidak ada data grafik untuk diekspor.");
       
@@ -1030,13 +1063,11 @@
             const currentDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
             const tanggalAsesmenVal = filteredDataCache[0] ? (filteredDataCache[0]["Tanggal Asesmen"] || '-') : '-';
             
-            // Gambar Grafik diambil dengan kompresi teroptimasi
             const barImgBase64 = chartBarKecamatanInstance ? chartBarKecamatanInstance.toBase64Image('image/jpeg', 0.85) : '';
             const pieImgBase64 = chartProporsiMembacaInstance ? chartProporsiMembacaInstance.toBase64Image('image/jpeg', 0.85) : '';
 
-            // Layout Khusus A4 Portrait
             let htmlContent = `
-              <div style="width: 190mm; padding: 4mm; font-family: Arial, sans-serif; color: #1e293b; background: #fff; box-sizing: border-box;">
+              <div style="width: 190mm; padding: 4mm; font-family: Arial, sans-serif; color: #1e293b; background: #ffffff; box-sizing: border-box;">
                 
                 <!-- Kop / Header -->
                 <div style="text-align: center; margin-bottom: 8px; border-bottom: 2px solid #334155; padding-bottom: 6px;">
@@ -1054,10 +1085,10 @@
                   </tr>
                 </table>
                 
-                <!-- Ringkasan Angka (Tabel Ringkas) -->
+                <!-- Ringkasan Angka -->
                 <div style="margin-bottom: 12px; page-break-inside: avoid;">
                   <h3 style="font-size: 10px; font-weight: bold; margin: 0 0 5px 0; color: #0f172a;">📊 Ringkasan Capaian Siswa</h3>
-                  <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 8px;">
+                  <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 8px; background: #ffffff;">
                     <tr style="background-color: #f8fafc;">
                       <td style="border: 1px solid #cbd5e1; padding: 4px; width: 14%;"><div style="color: #475569; font-size: 7px; font-weight: bold;">TOTAL</div><div style="font-size: 11px; font-weight: bold; color: #0f172a; margin-top:1px;">${totalSiswa}</div></td>
                       <td style="border: 1px solid #fed7aa; padding: 4px; width: 14%; background-color: #fff7ed;"><div style="color: #c2410c; font-size: 7px; font-weight: bold;">HURUF</div><div style="font-size: 11px; font-weight: bold; color: #c2410c; margin-top:1px;">${counts['Huruf']}</div></td>
@@ -1070,26 +1101,26 @@
                   </table>
                 </div>
 
-                <!-- Area Grafik Susun Vertikal (Portrait Safe) -->
-                <div style="display: flex; flex-direction: column; gap: 12px;">
+                <!-- Area Grafik Vertikal (Background Putih) -->
+                <div style="display: flex; flex-direction: column; gap: 12px; background: #ffffff;">
                   
                   <!-- Grafik Batang -->
                   ${barImgBase64 ? `
-                    <div style="border: 1px solid #e2e8f0; padding: 6px; border-radius: 8px; text-align: center; page-break-inside: avoid;">
+                    <div style="border: 1px solid #e2e8f0; padding: 6px; border-radius: 8px; text-align: center; background: #ffffff; page-break-inside: avoid;">
                       <div style="font-size: 8px; font-weight: bold; color: #4338ca; margin-bottom: 4px; background: #e0e7ff; padding: 3px; border-radius: 4px;">
-                        📌 Grafik Capaian Literasi | Filter: ${filterSummaryText}
+                        📌 Filter Grafik Batang: ${filterSummaryText}
                       </div>
-                      <img src="${barImgBase64}" style="width: 100%; max-height: 200px; object-fit: contain; display: block; margin: 0 auto;" />
+                      <img src="${barImgBase64}" style="width: 100%; max-height: 200px; object-fit: contain; display: block; margin: 0 auto; background: #ffffff;" />
                     </div>` : ''}
 
-                  <!-- Grafik Donat (Dijaga Rasio Bulatnya) -->
+                  <!-- Grafik Donat (Tepat di Tengah & Background Putih) -->
                   ${pieImgBase64 ? `
-                    <div style="border: 1px solid #e2e8f0; padding: 6px; border-radius: 8px; text-align: center; page-break-inside: avoid;">
+                    <div style="border: 1px solid #e2e8f0; padding: 6px; border-radius: 8px; text-align: center; background: #ffffff; page-break-inside: avoid;">
                       <div style="font-size: 8px; font-weight: bold; color: #0f766e; margin-bottom: 4px; background: #ccfbf1; padding: 3px; border-radius: 4px;">
-                        📌 Proporsi Kemampuan Membaca | Filter: ${filterSummaryText}
+                        📌 Filter Proporsi Kemampuan: ${filterSummaryText}
                       </div>
-                      <div style="width: 100%; max-width: 220px; margin: 0 auto;">
-                        <img src="${pieImgBase64}" style="width: 100%; height: auto; object-fit: contain; display: block; margin: 0 auto;" />
+                      <div style="width: 100%; max-width: 220px; margin: 0 auto; background: #ffffff;">
+                        <img src="${pieImgBase64}" style="width: 100%; height: auto; object-fit: contain; display: block; margin: 0 auto; background: #ffffff;" />
                       </div>
                     </div>` : ''}
 
@@ -1134,7 +1165,6 @@
         setTimeout(() => {
           try {
             const { jsPDF } = window.jspdf;
-            // Gunakan orientation: 'portrait'
             const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
             const valKecamatan = document.getElementById('filterKecamatan').value || "Semua Kecamatan";
@@ -1143,7 +1173,6 @@
             const currentDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
             const tanggalAsesmenVal = filteredDataCache[0] ? (filteredDataCache[0]["Tanggal Asesmen"] || '-') : '-';
 
-            // Header Dokumen
             doc.setFontSize(11);
             doc.setFont("helvetica", "bold");
             doc.text("RINCIAN HASIL ASESMEN MEMBACA SISWA", doc.internal.pageSize.getWidth() / 2, 10, { align: "center" });
@@ -1159,7 +1188,6 @@
             doc.text(`Tanggal Unduh: ${currentDate} | Total: ${filteredDataCache.length} Siswa`, 10, 20);
             doc.text(`Tanggal Asesmen: ${tanggalAsesmenVal}`, doc.internal.pageSize.getWidth() - 10, 20, { align: "right" });
 
-            // Tabel disesuaikan untuk lebar A4 Portrait (210mm - margin)
             const tableHeaders = [["No", "Nama Siswa", "Sekolah / Kelas", "Huruf", "Suku Kata", "Kata", "Paragraf", "Cerita", "Tanya"]];
             const tableBody = filteredDataCache.map((item, index) => [
               index + 1,
