@@ -7,6 +7,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="icon" href="data:,">
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen">
 
@@ -18,7 +19,7 @@
       <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
         <div>
           <h1 class="text-2xl font-bold tracking-tight">Dashboard Capaian Literasi Siswa</h1>
-          <p class="text-indigo-200 text-sm mt-1">Pemetaan Level Membaca: Huruf &rarr; Suku Kata &rarr; Kata &rarr; Paragraf &rarr; Membaca Cerpen &rarr; Menjawab Pertanyaan</p>
+          <p class="text-indigo-200 text-sm mt-1">Pemetaan Level Membaca: Huruf &rarr; Suku Kata &rarr; Kata &rarr; Paragraf &rarr; Cerita Pendek &rarr; Pertanyaan</p>
         </div>
         <div class="flex items-center gap-3">
           <button onclick="loadData()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow flex items-center gap-2">
@@ -75,8 +76,8 @@
               <option value="Suku Kata">Suku Kata</option>
               <option value="Kata">Kata</option>
               <option value="Paragraf">Paragraf</option>
-              <option value="Membaca Cerpen">Membaca Cerpen</option>
-              <option value="Menjawab Pertanyaan">Menjawab Pertanyaan</option>
+              <option value="Cerita Pendek">Cerita Pendek</option>
+              <option value="Pertanyaan">Pertanyaan</option>
             </select>
           </div>
         </div>
@@ -113,14 +114,14 @@
               <p id="percentParagraf" class="text-[10px] text-emerald-500">0%</p>
             </div>
             <div class="bg-teal-50 border border-teal-200 p-3.5 rounded-xl text-center">
-              <p class="text-[11px] font-bold text-teal-600 uppercase tracking-tight">Membaca Cerpen</p>
-              <p id="countMembacaCerpen" class="text-2xl font-extrabold text-teal-700 mt-1">0</p>
-              <p id="percentMembacaCerpen" class="text-[10px] text-teal-500">0%</p>
+              <p class="text-[11px] font-bold text-teal-600 uppercase tracking-tight">Cerita Pendek</p>
+              <p id="countCeritaPendek" class="text-2xl font-extrabold text-teal-700 mt-1">0</p>
+              <p id="percentCeritaPendek" class="text-[10px] text-teal-500">0%</p>
             </div>
             <div class="bg-blue-50 border border-blue-200 p-3.5 rounded-xl text-center">
-              <p class="text-[11px] font-bold text-blue-600 uppercase tracking-tight">Menjawab Pertanyaan</p>
-              <p id="countJawabPertanyaan" class="text-2xl font-extrabold text-blue-700 mt-1">0</p>
-              <p id="percentJawabPertanyaan" class="text-[10px] text-blue-500">0%</p>
+              <p class="text-[11px] font-bold text-blue-600 uppercase tracking-tight">Pertanyaan</p>
+              <p id="countPertanyaan" class="text-2xl font-extrabold text-blue-700 mt-1">0</p>
+              <p id="percentPertanyaan" class="text-[10px] text-blue-500">0%</p>
             </div>
           </div>
         </div>
@@ -188,8 +189,8 @@
                   <th class="p-3">Suku Kata</th>
                   <th class="p-3">Kata</th>
                   <th class="p-3">Paragraf</th>
-                  <th class="p-3">Membaca Cerpen</th>
-                  <th class="p-3">Menjawab Pertanyaan</th>
+                  <th class="p-3">Cerita Pendek</th>
+                  <th class="p-3">Pertanyaan</th>
                 </tr>
               </thead>
               <tbody id="tableBody">
@@ -206,7 +207,7 @@
   <script>
     // --- KONFIGURASI SUPABASE CLIENT ---
     const SUPABASE_URL = 'https://pjyxgbvsyhaoofbwwooh.supabase.co'; 
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqeXhnYnZzeWhhb29mYnd3b29oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2Mjc2NjAsImV4cCI6MjEwNjIwMzY2MH0.sHiVuPdP_StJioebd9RF8tMsTlrjs1QhmLo2qt-Cnk0';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqeXhnYnZzeWhhb29mYnd3b29oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2Mjc2NjAsImV4cCI6MjEwNjIwMzY2MH0.sHiVuPdP_StJioebd9RF8tMsTlrjs1QhmLo2qt-Cnk0'; // Pastikan isi anon_key publik Anda di sini
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let rawData = [];
@@ -220,17 +221,18 @@
       'Suku Kata': '#eab308',
       'Kata': '#f59e0b',
       'Paragraf': '#10b981',
-      'Membaca Cerpen': '#14b8a6',
-      'Menjawab Pertanyaan': '#3b82f6'
+      'Cerita Pendek': '#14b8a6',
+      'Pertanyaan': '#3b82f6'
     };
 
+    // Stage level disesuaikan persis dengan nama kolom di Supabase
     const LITERACY_STAGES = [
       { key: 'Huruf', label: 'Huruf', type: 'max_error', threshold: 2 },
       { key: 'Suku Kata', label: 'Suku Kata', type: 'max_error', threshold: 2 },
       { key: 'Kata', label: 'Kata', type: 'max_error', threshold: 2 },
       { key: 'Paragraf', label: 'Paragraf', type: 'max_error', threshold: 2 },
-      { key: 'Membaca Cerpen', label: 'Membaca Cerpen', type: 'max_error', threshold: 4 },
-      { key: 'Menjawab Pertanyaan', label: 'Menjawab Pertanyaan', type: 'min_correct', threshold: 5 }
+      { key: 'Cerita Pendek', label: 'Cerita Pendek', type: 'max_error', threshold: 4 },
+      { key: 'Pertanyaan', label: 'Pertanyaan', type: 'min_correct', threshold: 5 }
     ];
 
     function loadHtml2PdfScript(callback) {
@@ -259,33 +261,32 @@
     });
 
     // --- FUNGSI PEMANGGILAN DATA SUPABASE ---
-async function loadData() {
-  document.getElementById('loading').classList.remove('hidden');
-  document.getElementById('dashboardContent').classList.add('hidden');
+    async function loadData() {
+      document.getElementById('loading').classList.remove('hidden');
+      document.getElementById('dashboardContent').classList.add('hidden');
 
-  try {
-    // Ambil seluruh data dari Supabase tanpa fungsi .order() yang memicu error
-    const { data, error } = await _supabase
-      .from('asesmen_literasi')
-      .select('*');
+      try {
+        const { data, error } = await _supabase
+          .from('asesmen_literasi')
+          .select('*');
 
-    if (error) throw error;
+        if (error) throw error;
 
-    rawData = data.map(item => {
-      item.capaianLiterasi = calculateHighestLevel(item);
-      return item;
-    });
+        rawData = data.map(item => {
+          item.capaianLiterasi = calculateHighestLevel(item);
+          return item;
+        });
 
-    populateFilterOptions();
-    applyFilters();
+        populateFilterOptions();
+        applyFilters();
 
-    document.getElementById('loading').classList.add('hidden');
-    document.getElementById('dashboardContent').classList.remove('hidden');
-  } catch (err) {
-    alert("Gagal mengambil data dari Supabase: " + err.message);
-    document.getElementById('loading').classList.add('hidden');
-  }
-}
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('dashboardContent').classList.remove('hidden');
+      } catch (err) {
+        alert("Gagal mengambil data dari Supabase: " + err.message);
+        document.getElementById('loading').classList.add('hidden');
+      }
+    }
 
     function calculateHighestLevel(row) {
       let highestPassed = "Belum Terdeteksi";
@@ -438,7 +439,7 @@ async function loadData() {
       const totalSiswa = data.length;
       const total = totalSiswa || 1;
       
-      const counts = { 'Huruf': 0, 'Suku Kata': 0, 'Kata': 0, 'Paragraf': 0, 'Membaca Cerpen': 0, 'Menjawab Pertanyaan': 0 };
+      const counts = { 'Huruf': 0, 'Suku Kata': 0, 'Kata': 0, 'Paragraf': 0, 'Cerita Pendek': 0, 'Pertanyaan': 0 };
 
       data.forEach(item => {
         if (counts[item.capaianLiterasi] !== undefined) {
@@ -455,14 +456,14 @@ async function loadData() {
       document.getElementById('percentKata').textContent = Math.round((counts['Kata'] / total) * 100) + '%';
       document.getElementById('countParagraf').textContent = counts['Paragraf'];
       document.getElementById('percentParagraf').textContent = Math.round((counts['Paragraf'] / total) * 100) + '%';
-      document.getElementById('countMembacaCerpen').textContent = counts['Membaca Cerpen'];
-      document.getElementById('percentMembacaCerpen').textContent = Math.round((counts['Membaca Cerpen'] / total) * 100) + '%';
-      document.getElementById('countJawabPertanyaan').textContent = counts['Menjawab Pertanyaan'];
-      document.getElementById('percentJawabPertanyaan').textContent = Math.round((counts['Menjawab Pertanyaan'] / total) * 100) + '%';
+      document.getElementById('countCeritaPendek').textContent = counts['Cerita Pendek'];
+      document.getElementById('percentCeritaPendek').textContent = Math.round((counts['Cerita Pendek'] / total) * 100) + '%';
+      document.getElementById('countPertanyaan').textContent = counts['Pertanyaan'];
+      document.getElementById('percentPertanyaan').textContent = Math.round((counts['Pertanyaan'] / total) * 100) + '%';
     }
 
     function updateBarChart(data, selectedKec = "", selectedSekolah = "") {
-      const categories = ['Huruf', 'Suku Kata', 'Kata', 'Paragraf', 'Membaca Cerpen', 'Menjawab Pertanyaan'];
+      const categories = ['Huruf', 'Suku Kata', 'Kata', 'Paragraf', 'Cerita Pendek', 'Pertanyaan'];
       const titleElem = document.getElementById('chartBarTitle');
       const subtitleElem = document.getElementById('chartBarSubtitle');
 
@@ -526,7 +527,7 @@ async function loadData() {
     }
 
     function updateProporsiMembacaChart(data) {
-      const categories = ['Huruf', 'Suku Kata', 'Kata', 'Paragraf', 'Membaca Cerpen', 'Menjawab Pertanyaan'];
+      const categories = ['Huruf', 'Suku Kata', 'Kata', 'Paragraf', 'Cerita Pendek', 'Pertanyaan'];
       const counts = categories.map(cat => data.filter(item => item.capaianLiterasi === cat).length);
       const bgColors = categories.map(cat => CATEGORY_COLORS[cat]);
 
@@ -588,8 +589,8 @@ async function loadData() {
           <td class="p-3 text-slate-500">${item["Suku Kata"] ?? '-'}</td>
           <td class="p-3 text-slate-500">${item["Kata"] ?? '-'}</td>
           <td class="p-3 font-medium text-emerald-700 bg-emerald-50/50">${item["Paragraf"] ?? '-'}</td>
-          <td class="p-3 font-medium text-teal-700 bg-teal-50/50">${item["Membaca Cerpen"] ?? '-'}</td>
-          <td class="p-3 font-medium text-blue-700 bg-blue-50/50">${item["Menjawab Pertanyaan"] ?? '-'}</td>
+          <td class="p-3 font-medium text-teal-700 bg-teal-50/50">${item["Cerita Pendek"] ?? '-'}</td>
+          <td class="p-3 font-medium text-blue-700 bg-blue-50/50">${item["Pertanyaan"] ?? '-'}</td>
         `;
         fragment.appendChild(tr);
       });
@@ -609,10 +610,11 @@ async function loadData() {
         const valSekolah = document.getElementById('filterSekolah').value || "Semua Sekolah";
         const valKelas = document.getElementById('filterKelas').value ? "Kelas " + document.getElementById('filterKelas').value : "Semua Kelas";
         const totalSiswa = filteredDataCache.length;
-        const counts = { 'Huruf': 0, 'Suku Kata': 0, 'Kata': 0, 'Paragraf': 0, 'Membaca Cerpen': 0, 'Menjawab Pertanyaan': 0 };
+        const counts = { 'Huruf': 0, 'Suku Kata': 0, 'Kata': 0, 'Paragraf': 0, 'Cerita Pendek': 0, 'Pertanyaan': 0 };
         filteredDataCache.forEach(item => { if (counts[item.capaianLiterasi] !== undefined) counts[item.capaianLiterasi]++; });
 
         const currentDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+        const tanggalAsesmenVal = filteredDataCache[0] ? (filteredDataCache[0]["Tanggal Asesmen"] || '-') : '-';
         const barImgBase64 = chartBarKecamatanInstance ? chartBarKecamatanInstance.toBase64Image() : '';
         const pieImgBase64 = chartProporsiMembacaInstance ? chartProporsiMembacaInstance.toBase64Image() : '';
 
@@ -627,6 +629,7 @@ async function loadData() {
             <table style="width: 100%; font-size: 9px; color: #555; margin-bottom: 12px; border: none;">
               <tr>
                 <td style="text-align: left; border: none; padding: 0;">Tanggal Unduh: ${currentDate} | Total Data Tampil: ${totalSiswa} Siswa</td>
+                <td style="text-align: right; border: none; padding: 0; font-weight: bold;">Tanggal Asesmen: ${tanggalAsesmenVal}</td>
               </tr>
             </table>
             <div style="margin-bottom: 15px;">
@@ -638,8 +641,8 @@ async function loadData() {
                   <td style="border: 1px solid #fef08a; padding: 6px; width: 14%; background-color: #fefce8;"><div style="color: #a16207; font-weight: bold;">SUKU KATA</div><div style="font-size: 14px; font-weight: bold; color: #a16207; margin-top:2px;">${counts['Suku Kata']}</div></td>
                   <td style="border: 1px solid #fde68a; padding: 6px; width: 14%; background-color: #fffbeb;"><div style="color: #b45309; font-weight: bold;">KATA</div><div style="font-size: 14px; font-weight: bold; color: #b45309; margin-top:2px;">${counts['Kata']}</div></td>
                   <td style="border: 1px solid #a7f3d0; padding: 6px; width: 14%; background-color: #ecfdf5;"><div style="color: #047857; font-weight: bold;">PARAGRAF</div><div style="font-size: 14px; font-weight: bold; color: #047857; margin-top:2px;">${counts['Paragraf']}</div></td>
-                  <td style="border: 1px solid #99f6e4; padding: 6px; width: 14%; background-color: #f0fdfa;"><div style="color: #0f766e; font-weight: bold;">CERPEN</div><div style="font-size: 14px; font-weight: bold; color: #0f766e; margin-top:2px;">${counts['Membaca Cerpen']}</div></td>
-                  <td style="border: 1px solid #bfdbfe; padding: 6px; width: 14%; background-color: #eff6ff;"><div style="color: #1d4ed8; font-weight: bold;">PERTANYAAN</div><div style="font-size: 14px; font-weight: bold; color: #1d4ed8; margin-top:2px;">${counts['Menjawab Pertanyaan']}</div></td>
+                  <td style="border: 1px solid #99f6e4; padding: 6px; width: 14%; background-color: #f0fdfa;"><div style="color: #0f766e; font-weight: bold;">CERITA PENDEK</div><div style="font-size: 14px; font-weight: bold; color: #0f766e; margin-top:2px;">${counts['Cerita Pendek']}</div></td>
+                  <td style="border: 1px solid #bfdbfe; padding: 6px; width: 14%; background-color: #eff6ff;"><div style="color: #1d4ed8; font-weight: bold;">PERTANYAAN</div><div style="font-size: 14px; font-weight: bold; color: #1d4ed8; margin-top:2px;">${counts['Pertanyaan']}</div></td>
                 </tr>
               </table>
             </div>
@@ -667,6 +670,7 @@ async function loadData() {
         const valSekolah = document.getElementById('filterSekolah').value || "Semua Sekolah";
         const valKelas = document.getElementById('filterKelas').value ? "Kelas " + document.getElementById('filterKelas').value : "Semua Kelas";
         const currentDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+        const tanggalAsesmenVal = filteredDataCache[0] ? (filteredDataCache[0]["Tanggal Asesmen"] || '-') : '-';
 
         let htmlContent = `
           <div style="padding: 15px; font-family: Arial, sans-serif; color: #333; background: #fff;">
@@ -674,6 +678,12 @@ async function loadData() {
               <h2 style="margin: 0; font-size: 16px; font-weight: bold; text-transform: uppercase;">Rincian Hasil Asesmen Membaca Siswa</h2>
               <p style="margin: 4px 0 0 0; font-size: 11px; font-weight: bold; color: #4338ca;">Sekolah: ${valSekolah} | ${valKelas} | Kecamatan: ${valKecamatan}</p>
             </div>
+            <table style="width: 100%; font-size: 9px; color: #555; margin-bottom: 10px; border: none;">
+              <tr>
+                <td style="text-align: left; border: none; padding: 0;">Tanggal Unduh: ${currentDate} | Total Data Tampil: ${filteredDataCache.length} Siswa</td>
+                <td style="text-align: right; border: none; padding: 0; font-weight: bold;">Tanggal Asesmen: ${tanggalAsesmenVal}</td>
+              </tr>
+            </table>
             <table style="width: 100%; border-collapse: collapse; font-size: 8.5px;">
               <thead>
                 <tr style="background-color: #f1f5f9;">
@@ -685,7 +695,7 @@ async function loadData() {
                   <th style="border: 1px solid #cbd5e1; padding: 5px;">Suku Kata</th>
                   <th style="border: 1px solid #cbd5e1; padding: 5px;">Kata</th>
                   <th style="border: 1px solid #cbd5e1; padding: 5px;">Paragraf</th>
-                  <th style="border: 1px solid #cbd5e1; padding: 5px;">Cerpen</th>
+                  <th style="border: 1px solid #cbd5e1; padding: 5px;">Cerita Pendek</th>
                   <th style="border: 1px solid #cbd5e1; padding: 5px;">Pertanyaan</th>
                 </tr>
               </thead>
@@ -703,8 +713,8 @@ async function loadData() {
               <td style="border: 1px solid #cbd5e1; padding: 4px; text-align: center;">${item["Suku Kata"] ?? '-'}</td>
               <td style="border: 1px solid #cbd5e1; padding: 4px; text-align: center;">${item["Kata"] ?? '-'}</td>
               <td style="border: 1px solid #cbd5e1; padding: 4px; text-align: center;">${item["Paragraf"] ?? '-'}</td>
-              <td style="border: 1px solid #cbd5e1; padding: 4px; text-align: center;">${item["Membaca Cerpen"] ?? '-'}</td>
-              <td style="border: 1px solid #cbd5e1; padding: 4px; text-align: center;">${item["Menjawab Pertanyaan"] ?? '-'}</td>
+              <td style="border: 1px solid #cbd5e1; padding: 4px; text-align: center;">${item["Cerita Pendek"] ?? '-'}</td>
+              <td style="border: 1px solid #cbd5e1; padding: 4px; text-align: center;">${item["Pertanyaan"] ?? '-'}</td>
             </tr>
           `;
         });
