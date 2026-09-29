@@ -11,10 +11,54 @@
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen">
 
+  <!-- ================= AREA LOGIN & REGISTER ================= -->
+  <div id="authSection" class="min-h-screen flex items-center justify-center p-4 bg-slate-900">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-8 border border-slate-200">
+      
+      <!-- Logo / Header Auth -->
+      <div class="text-center mb-6">
+        <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-indigo-100 text-indigo-700 text-2xl mb-3">
+          📚
+        </div>
+        <h2 id="authTitle" class="text-2xl font-bold text-slate-800">Masuk ke Dashboard</h2>
+        <p id="authSubtitle" class="text-xs text-slate-500 mt-1">Silakan masuk menggunakan akun Admin atau Guest Anda</p>
+      </div>
+
+      <!-- Pesan Alert / Error -->
+      <div id="authAlert" class="hidden mb-4 p-3 rounded-lg text-xs font-medium"></div>
+
+      <!-- Form Login / Register -->
+      <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Username</label>
+          <input type="text" id="authUsername" required placeholder="Masukkan username" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Password</label>
+          <input type="password" id="authPassword" required placeholder="Masukkan password" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+
+        <button type="submit" id="btnAuthSubmit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg text-sm transition shadow">
+          Masuk Sekarang
+        </button>
+      </form>
+
+      <!-- Toggle Antara Login & Register -->
+      <div class="mt-6 pt-4 border-t border-slate-100 text-center text-xs text-slate-500">
+        <span id="authToggleText">Belum memiliki password Guest?</span>
+        <button onclick="toggleAuthMode()" id="btnToggleAuth" class="text-indigo-600 font-semibold hover:underline ml-1">
+          Daftar Guest Baru
+        </button>
+      </div>
+
+    </div>
+  </div>
+
   <!-- ================= AREA DASHBOARD ================= -->
-  <div id="mainDashboard">
+  <div id="mainDashboard" class="hidden">
     
-    <!-- Header -->
+    <!-- Header Dashboard -->
     <header class="bg-indigo-800 text-white py-6 px-8 shadow-md">
       <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
         <div>
@@ -22,8 +66,14 @@
           <p class="text-indigo-200 text-sm mt-1">Pemetaan Level Membaca: Huruf &rarr; Suku Kata &rarr; Kata &rarr; Paragraf &rarr; Cerita Pendek &rarr; Pertanyaan</p>
         </div>
         <div class="flex items-center gap-3">
-          <button onclick="loadData()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow flex items-center gap-2">
+          <span id="userBadge" class="bg-indigo-900 text-indigo-200 px-3 py-1.5 rounded-lg text-xs font-semibold border border-indigo-700">
+            👤 User: -
+          </span>
+          <button onclick="loadData()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-medium transition shadow flex items-center gap-1.5">
             <span>🔄</span> Refresh Data
+          </button>
+          <button onclick="handleLogout()" class="bg-rose-600 hover:bg-rose-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-medium transition shadow flex items-center gap-1.5">
+            <span>🚪</span> Keluar
           </button>
         </div>
       </div>
@@ -143,7 +193,6 @@
             <div>
               <h3 id="chartBarTitle" class="text-lg font-bold text-slate-800">📊 Capaian Literasi Per Kecamatan</h3>
               <p id="chartBarSubtitle" class="text-xs text-slate-500">Perbandingan jumlah siswa pada tiap jenjang membaca per Kecamatan</p>
-              <!-- Info Filter Aktif di Atas Grafik Batang -->
               <div id="filterInfoBar" class="mt-2 inline-block bg-indigo-50 border border-indigo-200 text-indigo-700 px-2.5 py-1 rounded-md text-[11px] font-medium"></div>
             </div>
             <div class="w-full flex justify-center py-4">
@@ -157,7 +206,6 @@
             <div>
               <h3 class="text-lg font-bold text-slate-800">🍰 Proporsi Kemampuan Membaca</h3>
               <p class="text-xs text-slate-500">Persentase total kontribusi setiap jenjang literasi membaca siswa (Sesuai Filter)</p>
-              <!-- Info Filter Aktif di Atas Grafik Proporsi -->
               <div id="filterInfoPie" class="mt-2 inline-block bg-teal-50 border border-teal-200 text-teal-700 px-2.5 py-1 rounded-md text-[11px] font-medium"></div>
             </div>
             <div class="w-full flex justify-center py-4">
@@ -209,10 +257,11 @@
   </div>
 
   <script>
-    // --- KONFIGURASI SUPABASE CLIENT & NAMA TABEL ---
+    // --- KONFIGURASI SUPABASE CLIENT & TABEL ---
     const SUPABASE_URL = 'https://pjyxgbvsyhaoofbwwooh.supabase.co'; 
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqeXhnYnZzeWhhb29mYnd3b29oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2Mjc2NjAsImV4cCI6MjEwNjIwMzY2MH0.sHiVuPdP_StJioebd9RF8tMsTlrjs1QhmLo2qt-Cnk0'; 
     const TABEL_NAME = 'asesmen_literasi';
+    const TABEL_AUTH = 'passwords'; // Tabel penampung password & role
 
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -221,6 +270,7 @@
     let chartBarKecamatanInstance = null;
     let chartProporsiMembacaInstance = null;
     let searchTimeout = null;
+    let isRegisterMode = false;
 
     const CATEGORY_COLORS = {
       'Huruf': '#f97316',
@@ -239,6 +289,167 @@
       { key: 'Cerita Pendek', label: 'Cerita Pendek', type: 'max_error', threshold: 4 },
       { key: 'Pertanyaan', label: 'Pertanyaan', type: 'min_correct', threshold: 5 }
     ];
+
+    // --- INISIALISASI SAAT HALAMAN DIMUAT ---
+    document.addEventListener("DOMContentLoaded", function() {
+      checkSession();
+
+      const searchInput = document.getElementById('searchInput');
+      if (searchInput) {
+        searchInput.addEventListener('input', function() {
+          clearTimeout(searchTimeout);
+          searchTimeout = setTimeout(() => {
+            applyFilters();
+          }, 300);
+        });
+      }
+    });
+
+    // --- FUNGSI MANAJEMEN AUTENTIKASI ---
+    function checkSession() {
+      const activeUser = JSON.parse(sessionStorage.getItem('dashboard_user'));
+      if (activeUser) {
+        document.getElementById('authSection').classList.add('hidden');
+        document.getElementById('mainDashboard').classList.remove('hidden');
+        document.getElementById('userBadge').textContent = `👤 ${activeUser.username} (${activeUser.role.toUpperCase()})`;
+        loadData();
+      } else {
+        document.getElementById('authSection').classList.remove('hidden');
+        document.getElementById('mainDashboard').classList.add('hidden');
+      }
+    }
+
+    function toggleAuthMode() {
+      isRegisterMode = !isRegisterMode;
+      const title = document.getElementById('authTitle');
+      const subtitle = document.getElementById('authSubtitle');
+      const btn = document.getElementById('btnAuthSubmit');
+      const toggleText = document.getElementById('authToggleText');
+      const btnToggle = document.getElementById('btnToggleAuth');
+
+      hideAuthAlert();
+
+      if (isRegisterMode) {
+        title.textContent = "Daftar Akun Guest Baru";
+        subtitle.textContent = "Buat password Guest Anda sendiri untuk mengakses dashboard";
+        btn.textContent = "Daftarkan Guest Baru";
+        toggleText.textContent = "Sudah memiliki akun?";
+        btnToggle.textContent = "Kembali ke Login";
+      } else {
+        title.textContent = "Masuk ke Dashboard";
+        subtitle.textContent = "Silakan masuk menggunakan akun Admin atau Guest Anda";
+        btn.textContent = "Masuk Sekarang";
+        toggleText.textContent = "Belum memiliki password Guest?";
+        btnToggle.textContent = "Daftar Guest Baru";
+      }
+    }
+
+    function showAuthAlert(message, isError = true) {
+      const alertEl = document.getElementById('authAlert');
+      alertEl.classList.remove('hidden', 'bg-rose-50', 'text-rose-700', 'bg-emerald-50', 'text-emerald-700', 'border-rose-200', 'border-emerald-200');
+      
+      if (isError) {
+        alertEl.classList.add('bg-rose-50', 'text-rose-700', 'border', 'border-rose-200');
+      } else {
+        alertEl.classList.add('bg-emerald-50', 'text-emerald-700', 'border', 'border-emerald-200');
+      }
+      
+      alertEl.textContent = message;
+    }
+
+    function hideAuthAlert() {
+      document.getElementById('authAlert').classList.add('hidden');
+    }
+
+    async function handleAuthSubmit(e) {
+      e.preventDefault();
+      hideAuthAlert();
+
+      const usernameVal = document.getElementById('authUsername').value.trim();
+      const passwordVal = document.getElementById('authPassword').value.trim();
+      const btn = document.getElementById('btnAuthSubmit');
+
+      if (!usernameVal || !passwordVal) {
+        return showAuthAlert("Username dan Password wajib diisi!");
+      }
+
+      btn.disabled = true;
+
+      try {
+        if (isRegisterMode) {
+          // --- PROSES DAFTAR GUEST BARU ---
+          btn.innerHTML = `<span>⏳ Mendaftarkan...</span>`;
+
+          // Cek apakah username sudah ada
+          const { data: existingUser } = await _supabase
+            .from(TABEL_AUTH)
+            .select('username')
+            .eq('username', usernameVal)
+            .maybeSingle();
+
+          if (existingUser) {
+            btn.disabled = false;
+            btn.textContent = "Daftarkan Guest Baru";
+            return showAuthAlert("Username sudah terdaftar! Gunakan username lain.");
+          }
+
+          // Simpan Guest Baru ke Tabel passwords
+          const { error: insertError } = await _supabase
+            .from(TABEL_AUTH)
+            .insert([
+              { username: usernameVal, password: passwordVal, role: 'guest' }
+            ]);
+
+          if (insertError) throw insertError;
+
+          showAuthAlert("Pendaftaran berhasil! Silakan login.", false);
+          setTimeout(() => {
+            toggleAuthMode();
+          }, 1200);
+
+        } else {
+          // --- PROSES LOGIN ADMIN / GUEST ---
+          btn.innerHTML = `<span>⏳ Memverifikasi...</span>`;
+
+          const { data: userData, error: loginError } = await _supabase
+            .from(TABEL_AUTH)
+            .select('*')
+            .eq('username', usernameVal)
+            .eq('password', passwordVal)
+            .maybeSingle();
+
+          if (loginError) throw loginError;
+
+          if (!userData) {
+            btn.disabled = false;
+            btn.textContent = "Masuk Sekarang";
+            return showAuthAlert("Username atau Password salah!");
+          }
+
+          // Simpan sesi login di browser
+          sessionStorage.setItem('dashboard_user', JSON.stringify({
+            username: userData.username,
+            role: userData.role || 'guest'
+          }));
+
+          checkSession();
+        }
+
+      } catch (err) {
+        console.error("Auth Error:", err);
+        showAuthAlert("Terjadi kesalahan: " + err.message);
+      } finally {
+        btn.disabled = false;
+        if (!isRegisterMode) btn.textContent = "Masuk Sekarang";
+      }
+    }
+
+    function handleLogout() {
+      if (confirm("Apakah Anda yakin ingin keluar?")) {
+        sessionStorage.removeItem('dashboard_user');
+        checkSession();
+      }
+    }
 
     // --- FUNGSI MENDAPATKAN STRING KETERANGAN FILTER AKTIF ---
     function getActiveFiltersSummary() {
@@ -302,7 +513,7 @@
       document.head.appendChild(script1);
     }
 
-    // --- LAZY LOAD LIBRARY HTML2PDF (KHUSUS GRAFIK) ---
+    // --- LAZY LOAD LIBRARY HTML2PDF ---
     function loadHtml2PdfScript(callback) {
       if (window.html2pdf) {
         callback();
@@ -314,19 +525,6 @@
       script.onerror = () => alert("Gagal memuat pustaka pembuat PDF Grafik.");
       document.head.appendChild(script);
     }
-
-    document.addEventListener("DOMContentLoaded", function() {
-      const searchInput = document.getElementById('searchInput');
-      if (searchInput) {
-        searchInput.addEventListener('input', function() {
-          clearTimeout(searchTimeout);
-          searchTimeout = setTimeout(() => {
-            applyFilters();
-          }, 300);
-        });
-      }
-      loadData();
-    });
 
     // --- FUNGSI PEMANGGILAN SELURUH DATA DENGAN PAGINASI OTOMATIS ---
     async function loadData() {
@@ -532,7 +730,6 @@
         return matchesKec && matchesSek && matchesKelas && matchesJK && matchesCapaian && matchesSearch;
       });
 
-      // Update Tampilan Ringkasan & Keterangan Filter
       const filterSummaryText = getActiveFiltersSummary();
       document.getElementById('filterInfoBar').textContent = `📌 Filter: ${filterSummaryText}`;
       document.getElementById('filterInfoPie').textContent = `📌 Filter: ${filterSummaryText}`;
@@ -622,7 +819,6 @@
           animation: false,
           responsive: true,
           maintainAspectRatio: false,
-          animation: false,
           plugins: {
             legend: { position: 'bottom', labels: { boxWidth: 10, padding: 10, font: { size: 10, weight: 'bold' } } },
             tooltip: { mode: 'index', intersect: false }
@@ -650,9 +846,9 @@
           datasets: [{ data: counts, backgroundColor: bgColors, hoverOffset: 6, borderWidth: 2, borderColor: '#ffffff' }]
         },
         options: {
+          animation: false,
           responsive: true,
           maintainAspectRatio: false,
-          animation: false,
           plugins: {
             legend: { position: 'bottom', labels: { boxWidth: 10, padding: 10, font: { size: 10, weight: 'bold' } } },
             tooltip: {
@@ -709,104 +905,102 @@
 
     // --- TOMBOL 1: EKSPOR GRAFIK KE PDF ---
     function exportChartsDirectPDF() {
-  if (filteredDataCache.length === 0) return alert("Tidak ada data grafik untuk diekspor.");
-  
-  loadHtml2PdfScript(() => {
-    const btn = document.getElementById('btnExportChartsPDF');
-    const originalText = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = `<span>⏳ Menyiapkan PDF Grafik...</span>`;
+      if (filteredDataCache.length === 0) return alert("Tidak ada data grafik untuk diekspor.");
+      
+      loadHtml2PdfScript(() => {
+        const btn = document.getElementById('btnExportChartsPDF');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = `<span>⏳ Menyiapkan PDF Grafik...</span>`;
 
-    // Penundaan 300ms memastikan Chart.js telah selesai merender canvas secara utuh
-    setTimeout(() => {
-      try {
-        const valKecamatan = document.getElementById('filterKecamatan').value || "Semua Kecamatan";
-        const valSekolah = document.getElementById('filterSekolah').value || "Semua Sekolah";
-        const valKelas = document.getElementById('filterKelas').value ? "Kelas " + document.getElementById('filterKelas').value : "Semua Kelas";
-        const filterSummaryText = getActiveFiltersSummary();
+        setTimeout(() => {
+          try {
+            const valKecamatan = document.getElementById('filterKecamatan').value || "Semua Kecamatan";
+            const valSekolah = document.getElementById('filterSekolah').value || "Semua Sekolah";
+            const valKelas = document.getElementById('filterKelas').value ? "Kelas " + document.getElementById('filterKelas').value : "Semua Kelas";
+            const filterSummaryText = getActiveFiltersSummary();
 
-        const totalSiswa = filteredDataCache.length;
-        const counts = { 'Huruf': 0, 'Suku Kata': 0, 'Kata': 0, 'Paragraf': 0, 'Cerita Pendek': 0, 'Pertanyaan': 0 };
-        filteredDataCache.forEach(item => { if (counts[item.capaianLiterasi] !== undefined) counts[item.capaianLiterasi]++; });
+            const totalSiswa = filteredDataCache.length;
+            const counts = { 'Huruf': 0, 'Suku Kata': 0, 'Kata': 0, 'Paragraf': 0, 'Cerita Pendek': 0, 'Pertanyaan': 0 };
+            filteredDataCache.forEach(item => { if (counts[item.capaianLiterasi] !== undefined) counts[item.capaianLiterasi]++; });
 
-        const currentDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-        const tanggalAsesmenVal = filteredDataCache[0] ? (filteredDataCache[0]["Tanggal Asesmen"] || '-') : '-';
-        
-        // Mengambil Base64 gambar dengan kualitias PNG 1.0 penuh
-        const barImgBase64 = chartBarKecamatanInstance ? chartBarKecamatanInstance.toBase64Image('image/png', 1.0) : '';
-        const pieImgBase64 = chartProporsiMembacaInstance ? chartProporsiMembacaInstance.toBase64Image('image/png', 1.0) : '';
-
-        let htmlContent = `
-          <div style="padding: 15px; font-family: Arial, sans-serif; color: #333; background: #fff;">
-            <div style="text-align: center; margin-bottom: 10px; border-bottom: 2px solid #333; padding-bottom: 8px;">
-              <h2 style="margin: 0; font-size: 16px; font-weight: bold; text-transform: uppercase;">Laporan Grafik Capaian Literasi Siswa</h2>
-              <p style="margin: 4px 0 0 0; font-size: 11px; font-weight: bold; color: #4338ca;">
-                Sekolah: ${valSekolah} | ${valKelas} | Kecamatan: ${valKecamatan}
-              </p>
-            </div>
-            <table style="width: 100%; font-size: 9px; color: #555; margin-bottom: 12px; border: none;">
-              <tr>
-                <td style="text-align: left; border: none; padding: 0;">Tanggal Unduh: ${currentDate} | Total Data Tampil: ${totalSiswa} Siswa</td>
-                <td style="text-align: right; border: none; padding: 0; font-weight: bold;">Tanggal Asesmen: ${tanggalAsesmenVal}</td>
-              </tr>
-            </table>
+            const currentDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+            const tanggalAsesmenVal = filteredDataCache[0] ? (filteredDataCache[0]["Tanggal Asesmen"] || '-') : '-';
             
-            <div style="margin-bottom: 12px;">
-              <h3 style="font-size: 11px; font-weight: bold; margin: 0 0 6px 0; color: #1e293b;">📊 Distribusi Capaian Literasi Siswa</h3>
-              <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 8px;">
-                <tr style="background-color: #f8fafc;">
-                  <td style="border: 1px solid #cbd5e1; padding: 6px; width: 14%;"><div style="color: #475569; font-weight: bold;">TOTAL SISWA</div><div style="font-size: 14px; font-weight: bold; color: #0f172a; margin-top:2px;">${totalSiswa}</div></td>
-                  <td style="border: 1px solid #fed7aa; padding: 6px; width: 14%; background-color: #fff7ed;"><div style="color: #c2410c; font-weight: bold;">HURUF</div><div style="font-size: 14px; font-weight: bold; color: #c2410c; margin-top:2px;">${counts['Huruf']}</div></td>
-                  <td style="border: 1px solid #fef08a; padding: 6px; width: 14%; background-color: #fefce8;"><div style="color: #a16207; font-weight: bold;">SUKU KATA</div><div style="font-size: 14px; font-weight: bold; color: #a16207; margin-top:2px;">${counts['Suku Kata']}</div></td>
-                  <td style="border: 1px solid #fde68a; padding: 6px; width: 14%; background-color: #fffbeb;"><div style="color: #b45309; font-weight: bold;">KATA</div><div style="font-size: 14px; font-weight: bold; color: #b45309; margin-top:2px;">${counts['Kata']}</div></td>
-                  <td style="border: 1px solid #a7f3d0; padding: 6px; width: 14%; background-color: #ecfdf5;"><div style="color: #047857; font-weight: bold;">PARAGRAF</div><div style="font-size: 14px; font-weight: bold; color: #047857; margin-top:2px;">${counts['Paragraf']}</div></td>
-                  <td style="border: 1px solid #99f6e4; padding: 6px; width: 14%; background-color: #f0fdfa;"><div style="color: #0f766e; font-weight: bold;">CERITA PENDEK</div><div style="font-size: 14px; font-weight: bold; color: #0f766e; margin-top:2px;">${counts['Cerita Pendek']}</div></td>
-                  <td style="border: 1px solid #bfdbfe; padding: 6px; width: 14%; background-color: #eff6ff;"><div style="color: #1d4ed8; font-weight: bold;">PERTANYAAN</div><div style="font-size: 14px; font-weight: bold; color: #1d4ed8; margin-top:2px;">${counts['Pertanyaan']}</div></td>
-                </tr>
-              </table>
-            </div>
+            const barImgBase64 = chartBarKecamatanInstance ? chartBarKecamatanInstance.toBase64Image('image/png', 1.0) : '';
+            const pieImgBase64 = chartProporsiMembacaInstance ? chartProporsiMembacaInstance.toBase64Image('image/png', 1.0) : '';
 
-            <div style="display: flex; gap: 10px; margin-bottom: 15px; page-break-inside: avoid;">
-              ${barImgBase64 ? `
-                <div style="flex: 1; border: 1px solid #e2e8f0; padding: 8px; border-radius: 6px; text-align: center;">
-                  <div style="font-size: 8px; font-weight: bold; color: #4338ca; margin-bottom: 4px; background: #e0e7ff; padding: 3px; border-radius: 3px;">
-                    📌 Capaian Literasi | Filter: ${filterSummaryText}
-                  </div>
-                  <img src="${barImgBase64}" style="width: 100%; max-height: 230px; margin: 0 auto; object-fit: contain;" />
-                </div>` : ''}
-              ${pieImgBase64 ? `
-                <div style="flex: 1; border: 1px solid #e2e8f0; padding: 8px; border-radius: 6px; text-align: center;">
-                  <div style="font-size: 8px; font-weight: bold; color: #0f766e; margin-bottom: 4px; background: #ccfbf1; padding: 3px; border-radius: 3px;">
-                    📌 Proporsi Kemampuan | Filter: ${filterSummaryText}
-                  </div>
-                  <img src="${pieImgBase64}" style="width: 100%; max-height: 230px; margin: 0 auto; object-fit: contain;" />
-                </div>` : ''}
-            </div>
-          </div>
-        `;
+            let htmlContent = `
+              <div style="padding: 15px; font-family: Arial, sans-serif; color: #333; background: #fff;">
+                <div style="text-align: center; margin-bottom: 10px; border-bottom: 2px solid #333; padding-bottom: 8px;">
+                  <h2 style="margin: 0; font-size: 16px; font-weight: bold; text-transform: uppercase;">Laporan Grafik Capaian Literasi Siswa</h2>
+                  <p style="margin: 4px 0 0 0; font-size: 11px; font-weight: bold; color: #4338ca;">
+                    Sekolah: ${valSekolah} | ${valKelas} | Kecamatan: ${valKecamatan}
+                  </p>
+                </div>
+                <table style="width: 100%; font-size: 9px; color: #555; margin-bottom: 12px; border: none;">
+                  <tr>
+                    <td style="text-align: left; border: none; padding: 0;">Tanggal Unduh: ${currentDate} | Total Data Tampil: ${totalSiswa} Siswa</td>
+                    <td style="text-align: right; border: none; padding: 0; font-weight: bold;">Tanggal Asesmen: ${tanggalAsesmenVal}</td>
+                  </tr>
+                </table>
+                
+                <div style="margin-bottom: 12px;">
+                  <h3 style="font-size: 11px; font-weight: bold; margin: 0 0 6px 0; color: #1e293b;">📊 Distribusi Capaian Literasi Siswa</h3>
+                  <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 8px;">
+                    <tr style="background-color: #f8fafc;">
+                      <td style="border: 1px solid #cbd5e1; padding: 6px; width: 14%;"><div style="color: #475569; font-weight: bold;">TOTAL SISWA</div><div style="font-size: 14px; font-weight: bold; color: #0f172a; margin-top:2px;">${totalSiswa}</div></td>
+                      <td style="border: 1px solid #fed7aa; padding: 6px; width: 14%; background-color: #fff7ed;"><div style="color: #c2410c; font-weight: bold;">HURUF</div><div style="font-size: 14px; font-weight: bold; color: #c2410c; margin-top:2px;">${counts['Huruf']}</div></td>
+                      <td style="border: 1px solid #fef08a; padding: 6px; width: 14%; background-color: #fefce8;"><div style="color: #a16207; font-weight: bold;">SUKU KATA</div><div style="font-size: 14px; font-weight: bold; color: #a16207; margin-top:2px;">${counts['Suku Kata']}</div></td>
+                      <td style="border: 1px solid #fde68a; padding: 6px; width: 14%; background-color: #fffbeb;"><div style="color: #b45309; font-weight: bold;">KATA</div><div style="font-size: 14px; font-weight: bold; color: #b45309; margin-top:2px;">${counts['Kata']}</div></td>
+                      <td style="border: 1px solid #a7f3d0; padding: 6px; width: 14%; background-color: #ecfdf5;"><div style="color: #047857; font-weight: bold;">PARAGRAF</div><div style="font-size: 14px; font-weight: bold; color: #047857; margin-top:2px;">${counts['Paragraf']}</div></td>
+                      <td style="border: 1px solid #99f6e4; padding: 6px; width: 14%; background-color: #f0fdfa;"><div style="color: #0f766e; font-weight: bold;">CERITA PENDEK</div><div style="font-size: 14px; font-weight: bold; color: #0f766e; margin-top:2px;">${counts['Cerita Pendek']}</div></td>
+                      <td style="border: 1px solid #bfdbfe; padding: 6px; width: 14%; background-color: #eff6ff;"><div style="color: #1d4ed8; font-weight: bold;">PERTANYAAN</div><div style="font-size: 14px; font-weight: bold; color: #1d4ed8; margin-top:2px;">${counts['Pertanyaan']}</div></td>
+                    </tr>
+                  </table>
+                </div>
 
-        const fileNameStr = generatePDFFileName("Grafik_Literasi");
-        const opt = { 
-          margin: [10, 10, 15, 10], 
-          filename: fileNameStr, 
-          image: { type: 'jpeg', quality: 0.98 }, 
-          html2canvas: { scale: 2, useCORS: true, logging: false }, 
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } 
-        };
+                <div style="display: flex; gap: 10px; margin-bottom: 15px; page-break-inside: avoid;">
+                  ${barImgBase64 ? `
+                    <div style="flex: 1; border: 1px solid #e2e8f0; padding: 8px; border-radius: 6px; text-align: center;">
+                      <div style="font-size: 8px; font-weight: bold; color: #4338ca; margin-bottom: 4px; background: #e0e7ff; padding: 3px; border-radius: 3px;">
+                        📌 Capaian Literasi | Filter: ${filterSummaryText}
+                      </div>
+                      <img src="${barImgBase64}" style="width: 100%; max-height: 230px; margin: 0 auto; object-fit: contain;" />
+                    </div>` : ''}
+                  ${pieImgBase64 ? `
+                    <div style="flex: 1; border: 1px solid #e2e8f0; padding: 8px; border-radius: 6px; text-align: center;">
+                      <div style="font-size: 8px; font-weight: bold; color: #0f766e; margin-bottom: 4px; background: #ccfbf1; padding: 3px; border-radius: 3px;">
+                        📌 Proporsi Kemampuan | Filter: ${filterSummaryText}
+                      </div>
+                      <img src="${pieImgBase64}" style="width: 100%; max-height: 230px; margin: 0 auto; object-fit: contain;" />
+                    </div>` : ''}
+                </div>
+              </div>
+            `;
 
-        html2pdf().from(htmlContent).set(opt).save().then(() => { 
-          btn.disabled = false; 
-          btn.innerHTML = originalText; 
-        });
+            const fileNameStr = generatePDFFileName("Grafik_Literasi");
+            const opt = { 
+              margin: [10, 10, 15, 10], 
+              filename: fileNameStr, 
+              image: { type: 'jpeg', quality: 0.98 }, 
+              html2canvas: { scale: 2, useCORS: true, logging: false }, 
+              jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } 
+            };
 
-      } catch (err) {
-        alert("Gagal mengekspor PDF Grafik: " + err.message);
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-      }
-    }, 300); // Delay 300ms menjamin gambar grafik siap
-  });
-}
+            html2pdf().from(htmlContent).set(opt).save().then(() => { 
+              btn.disabled = false; 
+              btn.innerHTML = originalText; 
+            });
+
+          } catch (err) {
+            alert("Gagal mengekspor PDF Grafik: " + err.message);
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+          }
+        }, 300);
+      });
+    }
 
     // --- TOMBOL 2: EKSPOR TABEL RINCIAN KE PDF ---
     function exportTableDirectPDF() {
