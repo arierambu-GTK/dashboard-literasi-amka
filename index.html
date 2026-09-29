@@ -234,7 +234,7 @@
               <p class="text-[11px] text-slate-500">Perbandingan jenjang membaca siswa</p>
             </div>
             <button onclick="exportChartsDirectPDF()" id="btnExportChartsPDF" class="w-full sm:w-auto bg-indigo-600 active:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-md shadow-indigo-500/20 flex items-center justify-center gap-2">
-              <span>📊</span> Ekspor PDF Grafik (Portrait)
+              <span>📊</span> Ekspor PDF Grafik 
             </button>
           </div>
 
@@ -288,7 +288,7 @@
             <div class="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
               <input type="text" id="searchInput" placeholder="Cari nama, sekolah, kecamatan..." class="bg-slate-50 border border-slate-300 text-xs rounded-xl p-2.5 w-full sm:w-64 focus:ring-2 focus:ring-indigo-500 outline-none">
               <button onclick="exportTableDirectPDF()" id="btnExportTablePDF" class="w-full sm:w-auto bg-emerald-600 active:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 whitespace-nowrap">
-                <span>📄</span> Ekspor Rincian PDF (Portrait)
+                <span>📄</span> Ekspor Rincian PDF
               </button>
             </div>
           </div>
@@ -1047,7 +1047,7 @@
         const btn = document.getElementById('btnExportChartsPDF');
         const originalText = btn.innerHTML;
         btn.disabled = true;
-        btn.innerHTML = `<span>⏳ Menyiapkan PDF Portrait...</span>`;
+        btn.innerHTML = `<span>⏳ Menyiapkan PDF...</span>`;
 
         setTimeout(() => {
           try {
@@ -1129,7 +1129,7 @@
               </div>
             `;
 
-            const fileNameStr = generatePDFFileName("Grafik_Literasi_Portrait");
+            const fileNameStr = generatePDFFileName("Data_Literasi");
             const opt = { 
               margin: [8, 8, 8, 8], 
               filename: fileNameStr, 
@@ -1160,7 +1160,7 @@
         const btn = document.getElementById('btnExportTablePDF');
         const originalText = btn.innerHTML;
         btn.disabled = true;
-        btn.innerHTML = `<span>⏳ Menyiapkan PDF Portrait (${filteredDataCache.length} Data)...</span>`;
+        btn.innerHTML = `<span>⏳ Menyiapkan PDF (${filteredDataCache.length} Data)...</span>`;
 
         setTimeout(() => {
           try {
@@ -1232,7 +1232,7 @@
               }
             });
 
-            const fileNameStr = generatePDFFileName("Rincian_Asesmen_Portrait");
+            const fileNameStr = generatePDFFileName("Rincian_Asesmen");
             doc.save(fileNameStr);
 
           } catch (err) {
