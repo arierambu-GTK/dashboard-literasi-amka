@@ -216,8 +216,8 @@
           </div>
         </div>
 
-        <!-- Tabel Detail Data -->
-        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+        <!-- Tabel Detail Data (Disembunyikan Otomatis untuk Guest) -->
+        <div id="tableSection" class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
           <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
             <div>
               <h3 class="text-base font-bold text-slate-700">Rincian Hasil Asesmen Membaca Siswa</h3>
@@ -261,7 +261,7 @@
     const SUPABASE_URL = 'https://pjyxgbvsyhaoofbwwooh.supabase.co'; 
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqeXhnYnZzeWhhb29mYnd3b29oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2Mjc2NjAsImV4cCI6MjEwNjIwMzY2MH0.sHiVuPdP_StJioebd9RF8tMsTlrjs1QhmLo2qt-Cnk0'; 
     const TABEL_NAME = 'asesmen_literasi';
-    const TABEL_AUTH = 'password_amka'; // Tabel penampung password & role
+    const TABEL_AUTH = 'password_amka'; // Tabel khusus otentikasi akun
 
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -305,13 +305,17 @@
       }
     });
 
-    // --- FUNGSI MANAJEMEN AUTENTIKASI ---
+    // --- MANAJEMEN SESI & HAK AKSES PERAN (ROLE) ---
     function checkSession() {
       const activeUser = JSON.parse(sessionStorage.getItem('dashboard_user'));
       if (activeUser) {
         document.getElementById('authSection').classList.add('hidden');
         document.getElementById('mainDashboard').classList.remove('hidden');
         document.getElementById('userBadge').textContent = `👤 ${activeUser.username} (${activeUser.role.toUpperCase()})`;
+        
+        // Terapkan batasan visual berdasarkan role (Admin vs Guest)
+        applyRolePermissions(activeUser.role);
+        
         loadData();
       } else {
         document.getElementById('authSection').classList.remove('hidden');
@@ -319,6 +323,22 @@
       }
     }
 
+    function applyRolePermissions(role) {
+      const tableSection = document.getElementById('tableSection');
+      const btnExportTablePDF = document.getElementById('btnExportTablePDF');
+
+      if (role === 'guest') {
+        // Sembunyikan Tabel Rincian Siswa dan Tombol Ekspor Rincian untuk Guest
+        if (tableSection) tableSection.classList.add('hidden');
+        if (btnExportTablePDF) btnExportTablePDF.classList.add('hidden');
+      } else {
+        // Tampilkan Semua Elemen untuk Admin
+        if (tableSection) tableSection.classList.remove('hidden');
+        if (btnExportTablePDF) btnExportTablePDF.classList.remove('hidden');
+      }
+    }
+
+    // --- FUNGSI LOGIN & REGISTER ---
     function toggleAuthMode() {
       isRegisterMode = !isRegisterMode;
       const title = document.getElementById('authTitle');
@@ -377,10 +397,9 @@
 
       try {
         if (isRegisterMode) {
-          // --- PROSES DAFTAR GUEST BARU ---
           btn.innerHTML = `<span>⏳ Mendaftarkan...</span>`;
 
-          // Cek apakah username sudah ada
+          // Cek apakah username sudah digunakan
           const { data: existingUser } = await _supabase
             .from(TABEL_AUTH)
             .select('username')
@@ -393,7 +412,7 @@
             return showAuthAlert("Username sudah terdaftar! Gunakan username lain.");
           }
 
-          // Simpan Guest Baru ke Tabel passwords
+          // Simpan Guest Baru ke Tabel password_amka
           const { error: insertError } = await _supabase
             .from(TABEL_AUTH)
             .insert([
@@ -408,7 +427,6 @@
           }, 1200);
 
         } else {
-          // --- PROSES LOGIN ADMIN / GUEST ---
           btn.innerHTML = `<span>⏳ Memverifikasi...</span>`;
 
           const { data: userData, error: loginError } = await _supabase
@@ -426,7 +444,7 @@
             return showAuthAlert("Username atau Password salah!");
           }
 
-          // Simpan sesi login di browser
+          // Simpan sesi login
           sessionStorage.setItem('dashboard_user', JSON.stringify({
             username: userData.username,
             role: userData.role || 'guest'
@@ -451,7 +469,7 @@
       }
     }
 
-    // --- FUNGSI MENDAPATKAN STRING KETERANGAN FILTER AKTIF ---
+    // --- FUNGSI AUXILIARY FILTER & NAMA FILE ---
     function getActiveFiltersSummary() {
       const valKecamatan = document.getElementById('filterKecamatan').value;
       const valSekolah = document.getElementById('filterSekolah').value;
@@ -469,7 +487,6 @@
       return parts.length > 0 ? parts.join(" | ") : "Semua Wilayah & Kriteria";
     }
 
-    // --- FUNGSI GENERATE NAMA FILE DENGAN FILTER AKTIF ---
     function generatePDFFileName(prefix) {
       const valKecamatan = document.getElementById('filterKecamatan').value;
       const valSekolah = document.getElementById('filterSekolah').value;
@@ -493,7 +510,7 @@
       return `${cleanStr}.pdf`;
     }
 
-    // --- LAZY LOAD LIBRARY JS-PDF & AUTO-TABLE ---
+    // --- LAZY LOAD LIBRARIES ---
     function loadJsPdfScripts(callback) {
       if (window.jspdf && window.jspdf.jsPDF && window.jspdf.jsPDF.API && window.jspdf.jsPDF.API.autoTable) {
         callback();
@@ -513,7 +530,6 @@
       document.head.appendChild(script1);
     }
 
-    // --- LAZY LOAD LIBRARY HTML2PDF ---
     function loadHtml2PdfScript(callback) {
       if (window.html2pdf) {
         callback();
@@ -526,7 +542,7 @@
       document.head.appendChild(script);
     }
 
-    // --- FUNGSI PEMANGGILAN SELURUH DATA DENGAN PAGINASI OTOMATIS ---
+    // --- PEMANGGILAN DATA SUPABASE ---
     async function loadData() {
       const loadingEl = document.getElementById('loading');
       const contentEl = document.getElementById('dashboardContent');
@@ -563,10 +579,8 @@
           }
         }
 
-        console.log("Total seluruh data berhasil diambil:", allData.length);
-
         if (allData.length === 0) {
-          alert(`Tabel '${TABEL_NAME}' di Tabel masih kosong.`);
+          alert(`Tabel '${TABEL_NAME}' masih kosong.`);
           return;
         }
 
@@ -583,7 +597,7 @@
 
       } catch (err) {
         console.error("Detail Error:", err);
-        alert("Gagal mengambil seluruh data: " + err.message);
+        alert("Gagal mengambil data: " + err.message);
       } finally {
         loadingEl.classList.add('hidden');
       }
@@ -713,7 +727,8 @@
       const kelasVal = document.getElementById('filterKelas').value;
       const jkVal = document.getElementById('filterJK').value;
       const capaianVal = document.getElementById('filterCapaian').value;
-      const searchVal = document.getElementById('searchInput').value.toLowerCase();
+      const searchInputEl = document.getElementById('searchInput');
+      const searchVal = searchInputEl ? searchInputEl.value.toLowerCase() : '';
 
       filteredDataCache = rawData.filter(item => {
         const matchesKec = !kecVal || item["Kecamatan"] === kecVal;
@@ -737,7 +752,12 @@
       updateLiteracyStats(filteredDataCache);
       updateBarChart(filteredDataCache, kecVal, sekVal);
       updateProporsiMembacaChart(filteredDataCache);
-      updateTable(filteredDataCache);
+      
+      // Update tabel hanya jika user adalah Admin (elemen ada)
+      const activeUser = JSON.parse(sessionStorage.getItem('dashboard_user'));
+      if (activeUser && activeUser.role !== 'guest') {
+        updateTable(filteredDataCache);
+      }
     }
 
     function updateLiteracyStats(data) {
@@ -816,7 +836,7 @@
           datasets: datasets
         },
         options: {
-          animation: false,
+          animation: false, // Animasi dimatikan agar render instan & PDF tidak terpotong
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
@@ -846,7 +866,7 @@
           datasets: [{ data: counts, backgroundColor: bgColors, hoverOffset: 6, borderWidth: 2, borderColor: '#ffffff' }]
         },
         options: {
-          animation: false,
+          animation: false, // Animasi dimatikan agar render instan & PDF tidak terpotong
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
@@ -868,6 +888,8 @@
 
     function updateTable(data) {
       const tbody = document.getElementById('tableBody');
+      if (!tbody) return;
+      
       tbody.innerHTML = '';
 
       if (data.length === 0) {
@@ -903,7 +925,7 @@
       tbody.appendChild(fragment);
     }
 
-    // --- TOMBOL 1: EKSPOR GRAFIK KE PDF ---
+    // --- TOMBOL 1: EKSPOR GRAFIK KE PDF (DAPAT DIAKSES ADMIN & GUEST) ---
     function exportChartsDirectPDF() {
       if (filteredDataCache.length === 0) return alert("Tidak ada data grafik untuk diekspor.");
       
@@ -913,6 +935,7 @@
         btn.disabled = true;
         btn.innerHTML = `<span>⏳ Menyiapkan PDF Grafik...</span>`;
 
+        // Delay 300ms memastikan canvas Chart.js siap 100%
         setTimeout(() => {
           try {
             const valKecamatan = document.getElementById('filterKecamatan').value || "Semua Kecamatan";
@@ -1002,7 +1025,7 @@
       });
     }
 
-    // --- TOMBOL 2: EKSPOR TABEL RINCIAN KE PDF ---
+    // --- TOMBOL 2: EKSPOR TABEL RINCIAN KE PDF (KHUSUS ADMIN) ---
     function exportTableDirectPDF() {
       if (filteredDataCache.length === 0) return alert("Tidak ada data rincian siswa yang tampil untuk diekspor.");
 
