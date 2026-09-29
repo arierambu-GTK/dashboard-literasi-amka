@@ -322,7 +322,7 @@
         let hasMore = true;
 
         while (hasMore) {
-          loadingText.textContent = `Memuat Data dari Supabase... (${allData.length} terambil)`;
+          loadingText.textContent = `Memuat Data dari Tabel... (${allData.length} terambil)`;
 
           const { data, error } = await _supabase
             .from(TABEL_NAME)
@@ -346,7 +346,7 @@
         console.log("Total seluruh data berhasil diambil:", allData.length);
 
         if (allData.length === 0) {
-          alert(`Tabel '${TABEL_NAME}' di Supabase masih kosong.`);
+          alert(`Tabel '${TABEL_NAME}' di Tabel masih kosong.`);
           return;
         }
 
