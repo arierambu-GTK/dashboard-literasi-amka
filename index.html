@@ -266,8 +266,7 @@
       try {
         const { data, error } = await _supabase
           .from('asesmen_literasi')
-          .select('*')
-          .order('No', { ascending: true });
+          .select('*');
 
         if (error) throw error;
 
