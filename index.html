@@ -208,6 +208,7 @@
     // --- KONFIGURASI SUPABASE CLIENT ---
     const SUPABASE_URL = 'https://pjyxgbvsyhaoofbwwooh.supabase.co'; 
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqeXhnYnZzeWhhb29mYnd3b29oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2Mjc2NjAsImV4cCI6MjEwNjIwMzY2MH0.sHiVuPdP_StJioebd9RF8tMsTlrjs1QhmLo2qt-Cnk0'; // Pastikan isi anon_key publik Anda di sini
+    const TABEL_NAME = 'asesmen_literasi';
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let rawData = [];
@@ -262,32 +263,64 @@
 
     // --- FUNGSI PEMANGGILAN DATA SUPABASE ---
     async function loadData() {
-      document.getElementById('loading').classList.remove('hidden');
-      document.getElementById('dashboardContent').classList.add('hidden');
+  const loadingEl = document.getElementById('loading');
+  const contentEl = document.getElementById('dashboardContent');
+  
+  loadingEl.classList.remove('hidden');
+  contentEl.classList.add('hidden');
 
-      try {
-        const { data, error } = await _supabase
-          .from('asesmen_literasi')
-          .select('*');
+  try {
+    let allData = [];
+    let from = 0;
+    const step = 1000;
+    let hasMore = true;
 
-        if (error) throw error;
+    while (hasMore) {
+      // Menggunakan TABEL_NAME di sini
+      const { data, error } = await _supabase
+        .from(TABEL_NAME)
+        .select('*')
+        .range(from, from + step - 1);
 
-        rawData = data.map(item => {
-          item.capaianLiterasi = calculateHighestLevel(item);
-          return item;
-        });
+      if (error) throw error;
 
-        populateFilterOptions();
-        applyFilters();
-
-        document.getElementById('loading').classList.add('hidden');
-        document.getElementById('dashboardContent').classList.remove('hidden');
-      } catch (err) {
-        alert("Gagal mengambil data dari Supabase: " + err.message);
-        document.getElementById('loading').classList.add('hidden');
+      if (data && data.length > 0) {
+        allData = allData.concat(data);
+        if (data.length < step) {
+          hasMore = false;
+        } else {
+          from += step;
+        }
+      } else {
+        hasMore = false;
       }
     }
 
+    console.log("Total seluruh data berhasil diambil:", allData.length);
+
+    if (allData.length === 0) {
+      alert(`Tabel '${TABEL_NAME}' di Supabase masih kosong.`);
+      return;
+    }
+
+    rawData = allData.map(item => {
+      item.capaianLiterasi = calculateHighestLevel(item);
+      return item;
+    });
+
+    populateFilterOptions();
+    applyFilters();
+
+    loadingEl.classList.add('hidden');
+    contentEl.classList.remove('hidden');
+
+  } catch (err) {
+    console.error("Detail Error:", err);
+    alert("Gagal mengambil seluruh data: " + err.message);
+  } finally {
+    loadingEl.classList.add('hidden');
+  }
+}
     function calculateHighestLevel(row) {
       let highestPassed = "Belum Terdeteksi";
 
