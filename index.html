@@ -208,7 +208,7 @@
     // --- KONFIGURASI SUPABASE CLIENT & NAMA TABEL ---
     const SUPABASE_URL = 'https://pjyxgbvsyhaoofbwwooh.supabase.co'; 
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqeXhnYnZzeWhhb29mYnd3b29oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2Mjc2NjAsImV4cCI6MjEwNjIwMzY2MH0.sHiVuPdP_StJioebd9RF8tMsTlrjs1QhmLo2qt-Cnk0'; 
-    const TABEL_NAME = 'asesmen_literasi'; // Konstanta Nama Tabel
+    const TABEL_NAME = 'asesmen_literasi';
 
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -236,7 +236,31 @@
       { key: 'Pertanyaan', label: 'Pertanyaan', type: 'min_correct', threshold: 5 }
     ];
 
-    // --- LAZY LOAD LIBRARY JS-PDF & AUTO-TABLE (BEBAS TERPOTONG) ---
+    // --- FUNGSI GENERATE NAMA FILE DENGAN FILTER AKTIF ---
+    function generatePDFFileName(prefix) {
+      const valKecamatan = document.getElementById('filterKecamatan').value;
+      const valSekolah = document.getElementById('filterSekolah').value;
+      const valKelas = document.getElementById('filterKelas').value;
+      const valJK = document.getElementById('filterJK').value;
+      const valCapaian = document.getElementById('filterCapaian').value;
+
+      let nameParts = [prefix];
+
+      if (valSekolah) nameParts.push(valSekolah);
+      if (valKelas) nameParts.push(`Kelas_${valKelas}`);
+      if (valKecamatan) nameParts.push(`Kec_${valKecamatan}`);
+      if (valJK) nameParts.push(`JK_${valJK}`);
+      if (valCapaian) nameParts.push(`Level_${valCapaian}`);
+
+      if (nameParts.length === 1) {
+        nameParts.push("Semua_Data");
+      }
+
+      const cleanStr = nameParts.join('_').replace(/[^a-zA-Z0-9_-]/g, '_').replace(/_+/g, '_');
+      return `${cleanStr}.pdf`;
+    }
+
+    // --- LAZY LOAD LIBRARY JS-PDF & AUTO-TABLE ---
     function loadJsPdfScripts(callback) {
       if (window.jspdf && window.jspdf.jsPDF && window.jspdf.jsPDF.API && window.jspdf.jsPDF.API.autoTable) {
         callback();
@@ -655,7 +679,7 @@
       tbody.appendChild(fragment);
     }
 
-    // --- TOMBOL 1: EKSPOR GRAFIK KE PDF ---
+    // --- TOMBOL 1: EKSPOR GRAFIK KE PDF (DENGAN NAMA FILE SESUAI FILTER) ---
     function exportChartsDirectPDF() {
       if (filteredDataCache.length === 0) return alert("Tidak ada data grafik untuk diekspor.");
       loadHtml2PdfScript(() => {
@@ -711,12 +735,13 @@
           </div>
         `;
 
-        const opt = { margin: [10, 10, 15, 10], filename: `Grafik_Literasi.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
+        const fileNameStr = generatePDFFileName("Grafik_Literasi");
+        const opt = { margin: [10, 10, 15, 10], filename: fileNameStr, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
         html2pdf().from(htmlContent).set(opt).save().then(() => { btn.disabled = false; btn.innerHTML = originalText; });
       });
     }
 
-    // --- TOMBOL 2: EKSPOR TABEL RINCIAN KE PDF (100% BEBAS TERPOTONG BERAPAPUN JUMLAH DATA) ---
+    // --- TOMBOL 2: EKSPOR TABEL RINCIAN KE PDF (DENGAN NAMA FILE SESUAI FILTER) ---
     function exportTableDirectPDF() {
       if (filteredDataCache.length === 0) return alert("Tidak ada data rincian siswa yang tampil untuk diekspor.");
 
@@ -744,7 +769,7 @@
 
             doc.setFontSize(9);
             doc.setFont("helvetica", "bold");
-            doc.setTextColor(67, 56, 202); // Warna Indigo
+            doc.setTextColor(67, 56, 202);
             doc.text(`Sekolah: ${valSekolah} | ${valKelas} | Kecamatan: ${valKecamatan}`, doc.internal.pageSize.getWidth() / 2, 17, { align: "center" });
             
             doc.setFontSize(8);
@@ -797,9 +822,8 @@
               }
             });
 
-            const cleanSekolah = valSekolah.replace(/\s+/g, '_');
-            const cleanKecamatan = valKecamatan.replace(/\s+/g, '_');
-            doc.save(`Rincian_Asesmen_${cleanSekolah}_${cleanKecamatan}.pdf`);
+            const fileNameStr = generatePDFFileName("Rincian_Asesmen");
+            doc.save(fileNameStr);
 
           } catch (err) {
             alert("Gagal mengekspor PDF Rincian: " + err.message);
