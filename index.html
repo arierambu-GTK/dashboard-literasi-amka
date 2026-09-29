@@ -234,11 +234,11 @@
               <p class="text-[11px] text-slate-500">Perbandingan jenjang membaca siswa</p>
             </div>
             <button onclick="exportChartsDirectPDF()" id="btnExportChartsPDF" class="w-full sm:w-auto bg-indigo-600 active:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-md shadow-indigo-500/20 flex items-center justify-center gap-2">
-              <span>📊</span> Ekspor PDF Grafik 
+              <span>📊</span> Ekspor PDF Grafik
             </button>
           </div>
 
-          <!-- Container Grafik (Background Putih Bersih) -->
+          <!-- Container Grafik -->
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
             
             <!-- Card 1: Grafik Batang -->
@@ -246,7 +246,6 @@
               <div>
                 <h3 id="chartBarTitle" class="text-sm font-bold text-slate-800">📊 Capaian Per Kecamatan</h3>
                 <p id="chartBarSubtitle" class="text-[10px] text-slate-500">Jumlah siswa pada tiap jenjang</p>
-                <!-- Badge Informasi FilterAktif -->
                 <div id="filterInfoBar" class="mt-2 inline-block bg-indigo-50 border border-indigo-200 text-indigo-700 px-2 py-0.5 rounded-md text-[10px] font-semibold">
                   📌 Filter: Semua Wilayah
                 </div>
@@ -256,18 +255,16 @@
               </div>
             </div>
 
-            <!-- Card 2: Grafik Donat (Tepat di Tengah & Background Putih) -->
+            <!-- Card 2: Grafik Donat -->
             <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
               <div>
                 <h3 class="text-sm font-bold text-slate-800">🍰 Proporsi Kemampuan Siswa</h3>
                 <p class="text-[10px] text-slate-500">Persentase kontribusi jenjang membaca</p>
-                <!-- Badge Informasi FilterAktif -->
                 <div id="filterInfoPie" class="mt-2 inline-block bg-teal-50 border border-teal-200 text-teal-700 px-2 py-0.5 rounded-md text-[10px] font-semibold">
                   📌 Filter: Semua Wilayah
                 </div>
               </div>
               
-              <!-- Wrapper Donat Presisi di Tengah -->
               <div class="w-full flex-1 flex items-center justify-center my-auto min-h-[260px] sm:min-h-[340px] bg-white rounded-xl p-2">
                 <div class="w-full max-w-[260px] sm:max-w-[300px] aspect-square flex items-center justify-center">
                   <canvas id="chartProporsiMembaca"></canvas>
@@ -597,7 +594,7 @@
         let hasMore = true;
 
         while (hasMore) {
-          loadingText.textContent = `Memuat Data... (${allData.length} data)`;
+          loadingText.textContent = `Memuat Data... (${allData.length} terambil)`;
 
           const { data, error } = await _supabase
             .from(TABEL_NAME)
@@ -910,7 +907,7 @@
           animation: false,
           responsive: true,
           maintainAspectRatio: true,
-          aspectRatio: 1, // Kunci Donat Bulat Sempurna
+          aspectRatio: 1,
           plugins: {
             legend: { position: 'bottom', labels: { boxWidth: 6, padding: 6, font: { size: 8, weight: 'bold' } } },
             tooltip: {
@@ -1039,7 +1036,7 @@
       document.head.appendChild(script);
     }
 
-    // --- EKSPOR GRAFIK KE PDF (FORMAT PORTRAIT & LATAR PUTIH BERSITH) ---
+    // --- EKSPOR GRAFIK KE PDF ---
     function exportChartsDirectPDF() {
       if (filteredDataCache.length === 0) return alert("Tidak ada data grafik untuk diekspor.");
       
@@ -1047,7 +1044,7 @@
         const btn = document.getElementById('btnExportChartsPDF');
         const originalText = btn.innerHTML;
         btn.disabled = true;
-        btn.innerHTML = `<span>⏳ Menyiapkan PDF...</span>`;
+        btn.innerHTML = `<span>⏳ Menyiapkan PDF ...</span>`;
 
         setTimeout(() => {
           try {
@@ -1101,7 +1098,7 @@
                   </table>
                 </div>
 
-                <!-- Area Grafik Vertikal (Background Putih) -->
+                <!-- Area Grafik Vertikal -->
                 <div style="display: flex; flex-direction: column; gap: 12px; background: #ffffff;">
                   
                   <!-- Grafik Batang -->
@@ -1113,7 +1110,7 @@
                       <img src="${barImgBase64}" style="width: 100%; max-height: 200px; object-fit: contain; display: block; margin: 0 auto; background: #ffffff;" />
                     </div>` : ''}
 
-                  <!-- Grafik Donat (Tepat di Tengah & Background Putih) -->
+                  <!-- Grafik Donat -->
                   ${pieImgBase64 ? `
                     <div style="border: 1px solid #e2e8f0; padding: 6px; border-radius: 8px; text-align: center; background: #ffffff; page-break-inside: avoid;">
                       <div style="font-size: 8px; font-weight: bold; color: #0f766e; margin-bottom: 4px; background: #ccfbf1; padding: 3px; border-radius: 4px;">
@@ -1129,7 +1126,7 @@
               </div>
             `;
 
-            const fileNameStr = generatePDFFileName("Data_Literasi");
+            const fileNameStr = generatePDFFileName("Grafik_Literasi");
             const opt = { 
               margin: [8, 8, 8, 8], 
               filename: fileNameStr, 
@@ -1152,7 +1149,7 @@
       });
     }
 
-    // --- EKSPOR TABEL RINCIAN KE PDF (FORMAT PORTRAIT) ---
+    // --- EKSPOR TABEL RINCIAN KE PDF (TERMASUK KOLOM NAMA GURU) ---
     function exportTableDirectPDF() {
       if (filteredDataCache.length === 0) return alert("Tidak ada data rincian siswa yang tampil untuk diekspor.");
 
@@ -1173,6 +1170,7 @@
             const currentDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
             const tanggalAsesmenVal = filteredDataCache[0] ? (filteredDataCache[0]["Tanggal Asesmen"] || '-') : '-';
 
+            // Kop Header PDF
             doc.setFontSize(11);
             doc.setFont("helvetica", "bold");
             doc.text("RINCIAN HASIL ASESMEN MEMBACA SISWA", doc.internal.pageSize.getWidth() / 2, 10, { align: "center" });
@@ -1188,10 +1186,13 @@
             doc.text(`Tanggal Unduh: ${currentDate} | Total: ${filteredDataCache.length} Siswa`, 10, 20);
             doc.text(`Tanggal Asesmen: ${tanggalAsesmenVal}`, doc.internal.pageSize.getWidth() - 10, 20, { align: "right" });
 
-            const tableHeaders = [["No", "Nama Siswa", "Sekolah / Kelas", "Huruf", "Suku Kata", "Kata", "Paragraf", "Cerita", "Tanya"]];
+            // Header Tabel Menambahkan "Nama Guru"
+            const tableHeaders = [["No", "Nama Siswa", "Nama Guru", "Sekolah / Kelas", "Huruf", "Suku Kata", "Kata", "Paragraf", "Cerita", "Tanya"]];
+            
             const tableBody = filteredDataCache.map((item, index) => [
               index + 1,
               item["Nama Siswa"] || '-',
+              item["Nama Guru"] || '-',
               `${item["Nama Sekolah"] || '-'}\n(Kelas ${item["Kelas"] || '-'})`,
               item["Huruf"] ?? '-',
               item["Suku Kata"] ?? '-',
@@ -1207,18 +1208,19 @@
               head: tableHeaders,
               body: tableBody,
               theme: 'grid',
-              styles: { fontSize: 7, cellPadding: 1.5, overflow: 'linebreak' },
+              styles: { fontSize: 6.5, cellPadding: 1.5, overflow: 'linebreak' },
               headStyles: { fillColor: [241, 245, 249], textColor: [51, 65, 85], fontStyle: 'bold', halign: 'center' },
               columnStyles: {
-                0: { halign: 'center', cellWidth: 8 },
-                1: { cellWidth: 42 },
-                2: { cellWidth: 45 },
-                3: { halign: 'center' },
-                4: { halign: 'center' },
-                5: { halign: 'center' },
-                6: { halign: 'center' },
-                7: { halign: 'center' },
-                8: { halign: 'center' }
+                0: { halign: 'center', cellWidth: 7 },   // No
+                1: { cellWidth: 32 },                   // Nama Siswa
+                2: { cellWidth: 30 },                   // Nama Guru
+                3: { cellWidth: 38 },                   // Sekolah / Kelas
+                4: { halign: 'center', cellWidth: 14 },  // Huruf
+                5: { halign: 'center', cellWidth: 14 },  // Suku Kata
+                6: { halign: 'center', cellWidth: 13 },  // Kata
+                7: { halign: 'center', cellWidth: 14 },  // Paragraf
+                8: { halign: 'center', cellWidth: 14 },  // Cerita
+                9: { halign: 'center', cellWidth: 14 }   // Tanya
               },
               didDrawPage: (data) => {
                 const pageCount = doc.internal.getNumberOfPages();
