@@ -34,7 +34,7 @@
       <!-- Loading State -->
       <div id="loading" class="flex flex-col justify-center items-center py-20">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-700"></div>
-        <span id="loadingText" class="mt-4 text-slate-600 font-medium">Memuat Data dari Supabase...</span>
+        <span id="loadingText" class="mt-4 text-slate-600 font-medium">Memuat Data dari Tabel...</span>
       </div>
 
       <!-- Main Content Area -->
@@ -344,7 +344,7 @@
         let hasMore = true;
 
         while (hasMore) {
-          loadingText.textContent = `Memuat Data dari Supabase... (${allData.length} terambil)`;
+          loadingText.textContent = `Memuat Data dari Tabel... (${allData.length} terambil)`;
 
           const { data, error } = await _supabase
             .from(TABEL_NAME)
@@ -368,7 +368,7 @@
         console.log("Total seluruh data berhasil diambil:", allData.length);
 
         if (allData.length === 0) {
-          alert(`Tabel '${TABEL_NAME}' di Supabase masih kosong.`);
+          alert(`Tabel '${TABEL_NAME}' di Tabel masih kosong.`);
           return;
         }
 
