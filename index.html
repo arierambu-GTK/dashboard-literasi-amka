@@ -619,6 +619,7 @@
           datasets: datasets
         },
         options: {
+          animation: false,
           responsive: true,
           maintainAspectRatio: false,
           animation: false,
@@ -708,13 +709,17 @@
 
     // --- TOMBOL 1: EKSPOR GRAFIK KE PDF ---
     function exportChartsDirectPDF() {
-      if (filteredDataCache.length === 0) return alert("Tidak ada data grafik untuk diekspor.");
-      loadHtml2PdfScript(() => {
-        const btn = document.getElementById('btnExportChartsPDF');
-        const originalText = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = `<span>⏳ Menyiapkan PDF Grafik...</span>`;
+  if (filteredDataCache.length === 0) return alert("Tidak ada data grafik untuk diekspor.");
+  
+  loadHtml2PdfScript(() => {
+    const btn = document.getElementById('btnExportChartsPDF');
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<span>⏳ Menyiapkan PDF Grafik...</span>`;
 
+    // Penundaan 300ms memastikan Chart.js telah selesai merender canvas secara utuh
+    setTimeout(() => {
+      try {
         const valKecamatan = document.getElementById('filterKecamatan').value || "Semua Kecamatan";
         const valSekolah = document.getElementById('filterSekolah').value || "Semua Sekolah";
         const valKelas = document.getElementById('filterKelas').value ? "Kelas " + document.getElementById('filterKelas').value : "Semua Kelas";
@@ -726,8 +731,10 @@
 
         const currentDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
         const tanggalAsesmenVal = filteredDataCache[0] ? (filteredDataCache[0]["Tanggal Asesmen"] || '-') : '-';
-        const barImgBase64 = chartBarKecamatanInstance ? chartBarKecamatanInstance.toBase64Image() : '';
-        const pieImgBase64 = chartProporsiMembacaInstance ? chartProporsiMembacaInstance.toBase64Image() : '';
+        
+        // Mengambil Base64 gambar dengan kualitias PNG 1.0 penuh
+        const barImgBase64 = chartBarKecamatanInstance ? chartBarKecamatanInstance.toBase64Image('image/png', 1.0) : '';
+        const pieImgBase64 = chartProporsiMembacaInstance ? chartProporsiMembacaInstance.toBase64Image('image/png', 1.0) : '';
 
         let htmlContent = `
           <div style="padding: 15px; font-family: Arial, sans-serif; color: #333; background: #fff;">
@@ -744,7 +751,6 @@
               </tr>
             </table>
             
-            <!-- Kata 'Chart' dihilangkan sesuai instruksi -->
             <div style="margin-bottom: 12px;">
               <h3 style="font-size: 11px; font-weight: bold; margin: 0 0 6px 0; color: #1e293b;">📊 Distribusi Capaian Literasi Siswa</h3>
               <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 8px;">
@@ -760,31 +766,47 @@
               </table>
             </div>
 
-            <!-- Tampilan Keterangan Filter Di Atas Grafik Dalam PDF -->
             <div style="display: flex; gap: 10px; margin-bottom: 15px; page-break-inside: avoid;">
               ${barImgBase64 ? `
                 <div style="flex: 1; border: 1px solid #e2e8f0; padding: 8px; border-radius: 6px; text-align: center;">
                   <div style="font-size: 8px; font-weight: bold; color: #4338ca; margin-bottom: 4px; background: #e0e7ff; padding: 3px; border-radius: 3px;">
                     📌 Capaian Literasi | Filter: ${filterSummaryText}
                   </div>
-                  <img src="${barImgBase64}" style="max-width: 100%; max-height: 240px; margin: 0 auto; object-fit: contain;" />
+                  <img src="${barImgBase64}" style="width: 100%; max-height: 230px; margin: 0 auto; object-fit: contain;" />
                 </div>` : ''}
               ${pieImgBase64 ? `
                 <div style="flex: 1; border: 1px solid #e2e8f0; padding: 8px; border-radius: 6px; text-align: center;">
                   <div style="font-size: 8px; font-weight: bold; color: #0f766e; margin-bottom: 4px; background: #ccfbf1; padding: 3px; border-radius: 3px;">
                     📌 Proporsi Kemampuan | Filter: ${filterSummaryText}
                   </div>
-                  <img src="${pieImgBase64}" style="max-width: 100%; max-height: 240px; margin: 0 auto; object-fit: contain;" />
+                  <img src="${pieImgBase64}" style="width: 100%; max-height: 230px; margin: 0 auto; object-fit: contain;" />
                 </div>` : ''}
             </div>
           </div>
         `;
 
         const fileNameStr = generatePDFFileName("Grafik_Literasi");
-        const opt = { margin: [10, 10, 15, 10], filename: fileNameStr, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
-        html2pdf().from(htmlContent).set(opt).save().then(() => { btn.disabled = false; btn.innerHTML = originalText; });
-      });
-    }
+        const opt = { 
+          margin: [10, 10, 15, 10], 
+          filename: fileNameStr, 
+          image: { type: 'jpeg', quality: 0.98 }, 
+          html2canvas: { scale: 2, useCORS: true, logging: false }, 
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } 
+        };
+
+        html2pdf().from(htmlContent).set(opt).save().then(() => { 
+          btn.disabled = false; 
+          btn.innerHTML = originalText; 
+        });
+
+      } catch (err) {
+        alert("Gagal mengekspor PDF Grafik: " + err.message);
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+    }, 300); // Delay 300ms menjamin gambar grafik siap
+  });
+}
 
     // --- TOMBOL 2: EKSPOR TABEL RINCIAN KE PDF ---
     function exportTableDirectPDF() {
