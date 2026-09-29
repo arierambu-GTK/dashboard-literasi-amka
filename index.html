@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard Capaian Literasi Asesmen Siswa</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen">
+
+  <!-- ================= AREA DASHBOARD ================= -->
+  <div id="mainDashboard">
+    
+    <!-- Header -->
+    <header class="bg-indigo-800 text-white py-6 px-8 shadow-md">
+      <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight">Dashboard Capaian Literasi Siswa</h1>
+          <p class="text-indigo-200 text-sm mt-1">Pemetaan Level Membaca: Huruf &rarr; Suku Kata &rarr; Kata &rarr; Paragraf &rarr; Membaca Cerpen &rarr; Menjawab Pertanyaan</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <button onclick="loadData()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow flex items-center gap-2">
+            <span>🔄</span> Refresh Data
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-6 space-y-6">
+
+      <!-- Loading State -->
+      <div id="loading" class="flex flex-col justify-center items-center py-20">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-700"></div>
+        <span class="mt-4 text-slate-600 font-medium">Memuat Data dari Supabase...</span>
+      </div>
+
+      <!-- Main Content Area -->
+      <div id="dashboardContent" class="hidden space-y-6">
+
+        <!-- Filter Bar -->
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Kecamatan</label>
+            <select id="filterKecamatan" onchange="onKecamatanChange()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+              <option value="">Semua Kecamatan</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Sekolah</label>
+            <select id="filterSekolah" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+              <option value="">Semua Sekolah</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Kelas</label>
+            <select id="filterKelas" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+              <option value="">Semua Kelas</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Jenis Kelamin</label>
+            <select id="filterJK" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+              <option value="">Semua Jenis Kelamin</option>
+              <option value="L">Laki-laki (L)</option>
+              <option value="P">Perempuan (P)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Level Capaian Tertinggi</label>
+            <select id="filterCapaian" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-medium text-indigo-700">
+              <option value="">Semua Level</option>
+              <option value="Huruf">Huruf</option>
+              <option value="Suku Kata">Suku Kata</option>
+              <option value="Kata">Kata</option>
+              <option value="Paragraf">Paragraf</option>
+              <option value="Membaca Cerpen">Membaca Cerpen</option>
+              <option value="Menjawab Pertanyaan">Menjawab Pertanyaan</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Ringkasan Capaian Literasi (Card KPIs) -->
+        <div>
+          <h2 class="text-lg font-bold text-slate-800 mb-3 flex items-center gap-2">
+            <span>📊</span> Distribusi Capaian Literasi Siswa
+          </h2>
+          <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+            <div class="bg-slate-100 border border-slate-300 p-3.5 rounded-xl text-center">
+              <p class="text-[11px] font-bold text-slate-600 uppercase tracking-tight">Total Siswa</p>
+              <p id="countTotalSiswa" class="text-2xl font-extrabold text-slate-800 mt-1">0</p>
+              <p class="text-[10px] text-slate-500">Filtered</p>
+            </div>
+            <div class="bg-orange-50 border border-orange-200 p-3.5 rounded-xl text-center">
+              <p class="text-[11px] font-bold text-orange-600 uppercase tracking-tight">Huruf</p>
+              <p id="countHuruf" class="text-2xl font-extrabold text-orange-700 mt-1">0</p>
+              <p id="percentHuruf" class="text-[10px] text-orange-500">0%</p>
+            </div>
+            <div class="bg-yellow-50 border border-yellow-200 p-3.5 rounded-xl text-center">
+              <p class="text-[11px] font-bold text-yellow-700 uppercase tracking-tight">Suku Kata</p>
+              <p id="countSukuKata" class="text-2xl font-extrabold text-yellow-800 mt-1">0</p>
+              <p id="percentSukuKata" class="text-[10px] text-yellow-600">0%</p>
+            </div>
+            <div class="bg-amber-50 border border-amber-200 p-3.5 rounded-xl text-center">
+              <p class="text-[11px] font-bold text-amber-600 uppercase tracking-tight">Kata</p>
+              <p id="countKata" class="text-2xl font-extrabold text-amber-700 mt-1">0</p>
+              <p id="percentKata" class="text-[10px] text-amber-500">0%</p>
+            </div>
+            <div class="bg-emerald-50 border border-emerald-200 p-3.5 rounded-xl text-center">
+              <p class="text-[11px] font-bold text-emerald-600 uppercase tracking-tight">Paragraf</p>
+              <p id="countParagraf" class="text-2xl font-extrabold text-emerald-700 mt-1">0</p>
+              <p id="percentParagraf" class="text-[10px] text-emerald-500">0%</p>
+            </div>
+            <div class="bg-teal-50 border border-teal-200 p-3.5 rounded-xl text-center">
+              <p class="text-[11px] font-bold text-teal-600 uppercase tracking-tight">Membaca Cerpen</p>
+              <p id="countMembacaCerpen" class="text-2xl font-extrabold text-teal-700 mt-1">0</p>
+              <p id="percentMembacaCerpen" class="text-[10px] text-teal-500">0%</p>
+            </div>
+            <div class="bg-blue-50 border border-blue-200 p-3.5 rounded-xl text-center">
+              <p class="text-[11px] font-bold text-blue-600 uppercase tracking-tight">Menjawab Pertanyaan</p>
+              <p id="countJawabPertanyaan" class="text-2xl font-extrabold text-blue-700 mt-1">0</p>
+              <p id="percentJawabPertanyaan" class="text-[10px] text-blue-500">0%</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Header + TOMBOL 1: Ekspor Data Grafik -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-2">
+          <div>
+            <h2 class="text-lg font-bold text-slate-800">📈 Visualisasi Grafik Literasi</h2>
+            <p class="text-xs text-slate-500">Analisis grafik capaian literasi berdasarkan wilayah dan kriteria siswa</p>
+          </div>
+          <button onclick="exportChartsDirectPDF()" id="btnExportChartsPDF" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow flex items-center justify-center gap-2 w-full sm:w-auto">
+            <span>📊</span> Ekspor Data Capaian Literasi Siswa
+          </button>
+        </div>
+
+        <!-- Area Visualisasi Grafik -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
+            <div>
+              <h3 id="chartBarTitle" class="text-lg font-bold text-slate-800">📊 Capaian Literasi Per Kecamatan</h3>
+              <p id="chartBarSubtitle" class="text-xs text-slate-500">Perbandingan jumlah siswa pada tiap jenjang membaca per Kecamatan</p>
+            </div>
+            <div class="w-full flex justify-center py-4">
+              <div class="w-full h-[380px]">
+                <canvas id="chartBarKecamatan"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
+            <div>
+              <h3 class="text-lg font-bold text-slate-800">🍰 Proporsi Kemampuan Membaca</h3>
+              <p class="text-xs text-slate-500">Persentase total kontribusi setiap jenjang literasi membaca siswa (Sesuai Filter)</p>
+            </div>
+            <div class="w-full flex justify-center py-4">
+              <div class="w-full h-[380px]">
+                <canvas id="chartProporsiMembaca"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabel Detail Data -->
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+            <div>
+              <h3 class="text-base font-bold text-slate-700">Rincian Hasil Asesmen Membaca Siswa</h3>
+              <p class="text-xs text-slate-500">Data hasil pengujian membaca berjenjang setiap siswa</p>
+            </div>
+            <div class="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
+              <input type="text" id="searchInput" placeholder="Cari nama siswa, sekolah, kecamatan..." class="bg-slate-50 border border-slate-300 text-sm rounded-lg p-2 w-full sm:w-64 focus:ring-2 focus:ring-indigo-500 outline-none">
+              <button onclick="exportTableDirectPDF()" id="btnExportTablePDF" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow flex items-center justify-center gap-2 w-full sm:w-auto whitespace-nowrap">
+                <span>📄</span> Ekspor Rincian Asesmen
+              </button>
+            </div>
+          </div>
+          
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left text-slate-600 border-collapse">
+              <thead class="text-xs text-slate-700 uppercase bg-slate-100 border-b">
+                <tr>
+                  <th class="p-3">Nama Siswa</th>
+                  <th class="p-3">Sekolah / Kelas</th>
+                  <th class="p-3">Huruf</th>
+                  <th class="p-3">Suku Kata</th>
+                  <th class="p-3">Kata</th>
+                  <th class="p-3">Paragraf</th>
+                  <th class="p-3">Membaca Cerpen</th>
+                  <th class="p-3">Menjawab Pertanyaan</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody">
+                <!-- Content via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // --- KONFIGURASI SUPABASE CLIENT ---
+    const SUPABASE_URL = 'https://pjyxgbvsyhaoofbwwooh.supabase.co'; 
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqeXhnYnZzeWhhb29mYnd3b29oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2Mjc2NjAsImV4cCI6MjEwNjIwMzY2MH0.sHiVuPdP_StJioebd9RF8tMsTlrjs1QhmLo2qt-Cnk0';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let rawData = [];
+    let filteredDataCache = [];
+    let chartBarKecamatanInstance = null;
+    let chartProporsiMembacaInstance = null;
+    let searchTimeout = null;
+
+    const CATEGORY_COLORS = {
+      'Huruf': '#f97316',
+      'Suku Kata': '#eab308',
+      'Kata': '#f59e0b',
+      'Paragraf': '#10b981',
+      'Membaca Cerpen': '#14b8a6',
+      'Menjawab Pertanyaan': '#3b82f6'
+    };
+
+    const LITERACY_STAGES = [
+      { key: 'Huruf', label: 'Huruf', type: 'max_error', threshold: 2 },
+      { key: 'Suku Kata', label: 'Suku Kata', type: 'max_error', threshold: 2 },
+      { key: 'Kata', label: 'Kata', type: 'max_error', threshold: 2 },
+      { key: 'Paragraf', label: 'Paragraf', type: 'max_error', threshold: 2 },
+      { key: 'Membaca Cerpen', label: 'Membaca Cerpen', type: 'max_error', threshold: 4 },
+      { key: 'Menjawab Pertanyaan', label: 'Menjawab Pertanyaan', type: 'min_correct', threshold: 5 }
+    ];
+
+    function loadHtml2PdfScript(callback) {
+      if (window.html2pdf) {
+        callback();
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
+      script.onload = callback;
+      script.onerror = () => alert("Gagal memuat pustaka pembuat PDF.");
+      document.head.appendChild(script);
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+      const searchInput = document.getElementById('searchInput');
+      if (searchInput) {
+        searchInput.addEventListener('input', function() {
+          clearTimeout(searchTimeout);
+          searchTimeout = setTimeout(() => {
+            applyFilters();
+          }, 300);
+        });
+      }
+      loadData();
+    });
+
+    // --- FUNGSI PEMANGGILAN DATA SUPABASE ---
+    async function loadData() {
+      document.getElementById('loading').classList.remove('hidden');
+      document.getElementById('dashboardContent').classList.add('hidden');
+
+      try {
+        const { data, error } = await _supabase
+          .from('asesmen_literasi')
+          .select('*')
+          .order('No', { ascending: true });
+
+        if (error) throw error;
+
+        rawData = data.map(item => {
+          item.capaianLiterasi = calculateHighestLevel(item);
+          return item;
+        });
+
+        populateFilterOptions();
+        applyFilters();
+
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('dashboardContent').classList.remove('hidden');
+      } catch (err) {
+        alert("Gagal mengambil data dari Supabase: " + err.message);
+        document.getElementById('loading').classList.add('hidden');
+      }
+    }
+
+    function calculateHighestLevel(row) {
+      let highestPassed = "Belum Terdeteksi";
+
+      for (let stage of LITERACY_STAGES) {
+        let rawVal = row[stage.key];
+        if (rawVal === undefined || rawVal === null) break; 
+
+        let valStr = String(rawVal).trim();
+        if (valStr === '' || valStr === '-') break; 
+
+        let lowerVal = valStr.toLowerCase();
+        if (lowerVal === 'tidak' || lowerVal === 'tdk' || lowerVal === 'tidak lulus' || lowerVal === 'gagal' || lowerVal === 'false') {
+          break; 
+        }
+
+        let isPass = false;
+        let numVal = parseFloat(valStr);
+
+        if (!isNaN(numVal)) {
+          if (stage.type === 'min_correct') {
+            isPass = numVal >= stage.threshold;
+          } else {
+            isPass = numVal <= stage.threshold;
+          }
+        } else {
+          isPass = lowerVal.includes("lulus") || 
+                   lowerVal.includes("ya") || 
+                   lowerVal.includes("lancar") || 
+                   lowerVal.includes("tanpa") || 
+                   lowerVal.includes("1-2") || 
+                   lowerVal === "0" ||
+                   lowerVal.includes("baik") ||
+                   lowerVal.includes("bisa") ||
+                   lowerVal.includes("<");
+        }
+
+        if (isPass) {
+          highestPassed = stage.label;
+        } else {
+          break; 
+        }
+      }
+
+      return highestPassed === "Belum Terdeteksi" ? "Huruf" : highestPassed;
+    }
+
+    function populateFilterOptions() {
+      const kecSet = new Set();
+      const kelasSet = new Set();
+
+      rawData.forEach(item => {
+        if (item["Kecamatan"] && item["Kecamatan"] !== '-') kecSet.add(item["Kecamatan"]);
+        if (item["Kelas"] && item["Kelas"] !== '-') kelasSet.add(item["Kelas"]);
+      });
+
+      fillSelect('filterKecamatan', Array.from(kecSet).sort());
+      fillSelect('filterKelas', Array.from(kelasSet).sort());
+      populateGroupedSekolahDropdown();
+    }
+
+    function populateGroupedSekolahDropdown(selectedKec = "") {
+      const selectSekolah = document.getElementById('filterSekolah');
+      const currentValue = selectSekolah.value;
+      selectSekolah.innerHTML = '<option value="">Semua Sekolah</option>';
+
+      const kecSekMap = {};
+
+      rawData.forEach(item => {
+        const kec = item["Kecamatan"] || "Lainnya";
+        const sek = item["Nama Sekolah"];
+        
+        if (selectedKec && kec !== selectedKec) return;
+
+        if (sek && sek !== '-') {
+          if (!kecSekMap[kec]) kecSekMap[kec] = new Set();
+          kecSekMap[kec].add(sek);
+        }
+      });
+
+      const sortedKec = Object.keys(kecSekMap).sort();
+
+      sortedKec.forEach(kec => {
+        const optgroup = document.createElement('optgroup');
+        optgroup.label = `Kec. ${kec}`;
+
+        const sortedSekolah = Array.from(kecSekMap[kec]).sort();
+        sortedSekolah.forEach(sek => {
+          const opt = document.createElement('option');
+          opt.value = sek;
+          opt.textContent = sek;
+          optgroup.appendChild(opt);
+        });
+
+        selectSekolah.appendChild(optgroup);
+      });
+
+      selectSekolah.value = currentValue;
+    }
+
+    function onKecamatanChange() {
+      const kecVal = document.getElementById('filterKecamatan').value;
+      populateGroupedSekolahDropdown(kecVal);
+      applyFilters();
+    }
+
+    function fillSelect(elementId, items) {
+      const select = document.getElementById(elementId);
+      const currentValue = select.value;
+      select.innerHTML = select.options[0].outerHTML;
+      items.forEach(val => {
+        const opt = document.createElement('option');
+        opt.value = val;
+        opt.textContent = val;
+        select.appendChild(opt);
+      });
+      select.value = currentValue;
+    }
+
+    function applyFilters() {
+      const kecVal = document.getElementById('filterKecamatan').value;
+      const sekVal = document.getElementById('filterSekolah').value;
+      const kelasVal = document.getElementById('filterKelas').value;
+      const jkVal = document.getElementById('filterJK').value;
+      const capaianVal = document.getElementById('filterCapaian').value;
+      const searchVal = document.getElementById('searchInput').value.toLowerCase();
+
+      filteredDataCache = rawData.filter(item => {
+        const matchesKec = !kecVal || item["Kecamatan"] === kecVal;
+        const matchesSek = !sekVal || item["Nama Sekolah"] === sekVal;
+        const matchesKelas = !kelasVal || item["Kelas"] === kelasVal;
+        const matchesJK = !jkVal || item["Jenis Kelamin"] === jkVal;
+        const matchesCapaian = !capaianVal || item.capaianLiterasi === capaianVal;
+        
+        const namaSiswa = (item["Nama Siswa"] || "").toString().toLowerCase();
+        const namaSekolah = (item["Nama Sekolah"] || "").toString().toLowerCase();
+        const kecamatan = (item["Kecamatan"] || "").toString().toLowerCase();
+        const matchesSearch = !searchVal || namaSiswa.includes(searchVal) || namaSekolah.includes(searchVal) || kecamatan.includes(searchVal);
+
+        return matchesKec && matchesSek && matchesKelas && matchesJK && matchesCapaian && matchesSearch;
+      });
+
+      updateLiteracyStats(filteredDataCache);
+      updateBarChart(filteredDataCache, kecVal, sekVal);
+      updateProporsiMembacaChart(filteredDataCache);
+      updateTable(filteredDataCache);
+    }
+
+    function updateLiteracyStats(data) {
+      const totalSiswa = data.length;
+      const total = totalSiswa || 1;
+      
+      const counts = { 'Huruf': 0, 'Suku Kata': 0, 'Kata': 0, 'Paragraf': 0, 'Membaca Cerpen': 0, 'Menjawab Pertanyaan': 0 };
+
+      data.forEach(item => {
+        if (counts[item.capaianLiterasi] !== undefined) {
+          counts[item.capaianLiterasi]++;
+        }
+      });
+
+      document.getElementById('countTotalSiswa').textContent = totalSiswa;
+      document.getElementById('countHuruf').textContent = counts['Huruf'];
+      document.getElementById('percentHuruf').textContent = Math.round((counts['Huruf'] / total) * 100) + '%';
+      document.getElementById('countSukuKata').textContent = counts['Suku Kata'];
+      document.getElementById('percentSukuKata').textContent = Math.round((counts['Suku Kata'] / total) * 100) + '%';
+      document.getElementById('countKata').textContent = counts['Kata'];
+      document.getElementById('percentKata').textContent = Math.round((counts['Kata'] / total) * 100) + '%';
+      document.getElementById('countParagraf').textContent = counts['Paragraf'];
+      document.getElementById('percentParagraf').textContent = Math.round((counts['Paragraf'] / total) * 100) + '%';
+      document.getElementById('countMembacaCerpen').textContent = counts['Membaca Cerpen'];
+      document.getElementById('percentMembacaCerpen').textContent = Math.round((counts['Membaca Cerpen'] / total) * 100) + '%';
+      document.getElementById('countJawabPertanyaan').textContent = counts['Menjawab Pertanyaan'];
+      document.getElementById('percentJawabPertanyaan').textContent = Math.round((counts['Menjawab Pertanyaan'] / total) * 100) + '%';
+    }
+
+    function updateBarChart(data, selectedKec = "", selectedSekolah = "") {
+      const categories = ['Huruf', 'Suku Kata', 'Kata', 'Paragraf', 'Membaca Cerpen', 'Menjawab Pertanyaan'];
+      const titleElem = document.getElementById('chartBarTitle');
+      const subtitleElem = document.getElementById('chartBarSubtitle');
+
+      let groupKey = "Kecamatan";
+      let labelPrefix = "Kec. ";
+
+      if (selectedSekolah) {
+        groupKey = "Kelas";
+        labelPrefix = "Kelas ";
+        titleElem.textContent = "📊 Capaian Literasi Per Kelas (" + selectedSekolah + ")";
+        subtitleElem.textContent = "Perbandingan jumlah siswa pada tiap jenjang membaca per Kelas";
+      } else if (selectedKec) {
+        groupKey = "Nama Sekolah";
+        labelPrefix = "";
+        titleElem.textContent = "📊 Capaian Literasi Per Sekolah (Kec. " + selectedKec + ")";
+        subtitleElem.textContent = "Perbandingan jumlah siswa pada tiap jenjang membaca per Sekolah";
+      } else {
+        groupKey = "Kecamatan";
+        labelPrefix = "Kec. ";
+        titleElem.textContent = "📊 Capaian Literasi Per Kecamatan";
+        subtitleElem.textContent = "Perbandingan jumlah siswa pada tiap jenjang membaca per Kecamatan";
+      }
+
+      const rawGroups = data.map(i => i[groupKey] || '-').filter(g => g !== '-');
+      let groupList = Array.from(new Set(rawGroups)).sort();
+      if (groupList.length === 0) groupList = ['Tidak Ada Data'];
+
+      const datasets = categories.map(cat => ({
+        label: cat,
+        data: groupList.map(grp => {
+          if (grp === 'Tidak Ada Data') return 0;
+          return data.filter(i => (i[groupKey] || '-') === grp && i.capaianLiterasi === cat).length;
+        }),
+        backgroundColor: CATEGORY_COLORS[cat],
+        borderRadius: 4
+      }));
+
+      if (chartBarKecamatanInstance) chartBarKecamatanInstance.destroy();
+
+      const ctx = document.getElementById('chartBarKecamatan').getContext('2d');
+      chartBarKecamatanInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: groupList.map(g => (g === 'Tidak Ada Data' ? g : labelPrefix + g)),
+          datasets: datasets
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 10, padding: 10, font: { size: 10, weight: 'bold' } } },
+            tooltip: { mode: 'index', intersect: false }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' }, color: '#334155' } },
+            y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: 'rgba(203, 213, 225, 0.4)' } }
+          }
+        }
+      });
+    }
+
+    function updateProporsiMembacaChart(data) {
+      const categories = ['Huruf', 'Suku Kata', 'Kata', 'Paragraf', 'Membaca Cerpen', 'Menjawab Pertanyaan'];
+      const counts = categories.map(cat => data.filter(item => item.capaianLiterasi === cat).length);
+      const bgColors = categories.map(cat => CATEGORY_COLORS[cat]);
+
+      if (chartProporsiMembacaInstance) chartProporsiMembacaInstance.destroy();
+
+      const ctx = document.getElementById('chartProporsiMembaca').getContext('2d');
+      chartProporsiMembacaInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: categories,
+          datasets: [{ data: counts, backgroundColor: bgColors, hoverOffset: 6, borderWidth: 2, borderColor: '#ffffff' }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 10, padding: 10, font: { size: 10, weight: 'bold' } } },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                  const val = context.raw || 0;
+                  const pct = total > 0 ? Math.round((val / total) * 100) : 0;
+                  return ` ${context.label}: ${val} siswa (${pct}%)`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function updateTable(data) {
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+
+      if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center p-4 text-slate-400">Tidak ada data siswa yang cocok dengan filter.</td></tr>`;
+        return;
+      }
+
+      const fragment = document.createDocumentFragment();
+
+      data.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.className = "border-b hover:bg-slate-50 transition";
+        
+        tr.innerHTML = `
+          <td class="p-3 font-semibold text-slate-800">
+            ${item["Nama Siswa"] || '-'}
+            <div class="text-[10px] text-slate-400 font-normal">JK: ${item["Jenis Kelamin"] || '-'} | Kec. ${item["Kecamatan"] || '-'}</div>
+          </td>
+          <td class="p-3">
+            <div class="font-medium text-slate-700">${item["Nama Sekolah"] || '-'}</div>
+            <div class="text-[10px] text-slate-400">${item["Kelas"] || '-'}</div>
+          </td>
+          <td class="p-3 text-slate-500">${item["Huruf"] ?? '-'}</td>
+          <td class="p-3 text-slate-500">${item["Suku Kata"] ?? '-'}</td>
+          <td class="p-3 text-slate-500">${item["Kata"] ?? '-'}</td>
+          <td class="p-3 font-medium text-emerald-700 bg-emerald-50/50">${item["Paragraf"] ?? '-'}</td>
+          <td class="p-3 font-medium text-teal-700 bg-teal-50/50">${item["Membaca Cerpen"] ?? '-'}</td>
+          <td class="p-3 font-medium text-blue-700 bg-blue-50/50">${item["Menjawab Pertanyaan"] ?? '-'}</td>
+        `;
+        fragment.appendChild(tr);
+      });
+
+      tbody.appendChild(fragment);
+    }
+
+    function exportChartsDirectPDF() {
+      if (filteredDataCache.length === 0) return alert("Tidak ada data grafik...");
+      loadHtml2PdfScript(() => {
+        const btn = document.getElementById('btnExportChartsPDF');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = `<span>⏳ Menyiapkan PDF Grafik...</span>`;
+
+        const valKecamatan = document.getElementById('filterKecamatan').value || "Semua Kecamatan";
+        const valSekolah = document.getElementById('filterSekolah').value || "Semua Sekolah";
+        const valKelas = document.getElementById('filterKelas').value ? "Kelas " + document.getElementById('filterKelas').value : "Semua Kelas";
+        const totalSiswa = filteredDataCache.length;
+        const counts = { 'Huruf': 0, 'Suku Kata': 0, 'Kata': 0, 'Paragraf': 0, 'Membaca Cerpen': 0, 'Menjawab Pertanyaan': 0 };
+        filteredDataCache.forEach(item => { if (counts[item.capaianLiterasi] !== undefined) counts[item.capaianLiterasi]++; });
+
+        const currentDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+        const barImgBase64 = chartBarKecamatanInstance ? chartBarKecamatanInstance.toBase64Image() : '';
+        const pieImgBase64 = chartProporsiMembacaInstance ? chartProporsiMembacaInstance.toBase64Image() : '';
+
+        let htmlContent = `
+          <div style="padding: 15px; font-family: Arial, sans-serif; color: #333; background: #fff;">
+            <div style="text-align: center; margin-bottom: 10px; border-bottom: 2px solid #333; padding-bottom: 8px;">
+              <h2 style="margin: 0; font-size: 16px; font-weight: bold; text-transform: uppercase;">Laporan Grafik Capaian Literasi Siswa</h2>
+              <p style="margin: 4px 0 0 0; font-size: 11px; font-weight: bold; color: #4338ca;">
+                Sekolah: ${valSekolah} | ${valKelas} | Kecamatan: ${valKecamatan}
+              </p>
+            </div>
+            <table style="width: 100%; font-size: 9px; color: #555; margin-bottom: 12px; border: none;">
+              <tr>
+                <td style="text-align: left; border: none; padding: 0;">Tanggal Unduh: ${currentDate} | Total Data Tampil: ${totalSiswa} Siswa</td>
+              </tr>
+            </table>
+            <div style="margin-bottom: 15px;">
+              <h3 style="font-size: 11px; font-weight: bold; margin: 0 0 6px 0; color: #1e293b;">📊 Chart Distribusi Capaian Literasi Siswa</h3>
+              <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 8px;">
+                <tr style="background-color: #f8fafc;">
+                  <td style="border: 1px solid #cbd5e1; padding: 6px; width: 14%;"><div style="color: #475569; font-weight: bold;">TOTAL SISWA</div><div style="font-size: 14px; font-weight: bold; color: #0f172a; margin-top:2px;">${totalSiswa}</div></td>
+                  <td style="border: 1px solid #fed7aa; padding: 6px; width: 14%; background-color: #fff7ed;"><div style="color: #c2410c; font-weight: bold;">HURUF</div><div style="font-size: 14px; font-weight: bold; color: #c2410c; margin-top:2px;">${counts['Huruf']}</div></td>
+                  <td style="border: 1px solid #fef08a; padding: 6px; width: 14%; background-color: #fefce8;"><div style="color: #a16207; font-weight: bold;">SUKU KATA</div><div style="font-size: 14px; font-weight: bold; color: #a16207; margin-top:2px;">${counts['Suku Kata']}</div></td>
+                  <td style="border: 1px solid #fde68a; padding: 6px; width: 14%; background-color: #fffbeb;"><div style="color: #b45309; font-weight: bold;">KATA</div><div style="font-size: 14px; font-weight: bold; color: #b45309; margin-top:2px;">${counts['Kata']}</div></td>
+                  <td style="border: 1px solid #a7f3d0; padding: 6px; width: 14%; background-color: #ecfdf5;"><div style="color: #047857; font-weight: bold;">PARAGRAF</div><div style="font-size: 14px; font-weight: bold; color: #047857; margin-top:2px;">${counts['Paragraf']}</div></td>
+                  <td style="border: 1px solid #99f6e4; padding: 6px; width: 14%; background-color: #f0fdfa;"><div style="color: #0f766e; font-weight: bold;">CERPEN</div><div style="font-size: 14px; font-weight: bold; color: #0f766e; margin-top:2px;">${counts['Membaca Cerpen']}</div></td>
+                  <td style="border: 1px solid #bfdbfe; padding: 6px; width: 14%; background-color: #eff6ff;"><div style="color: #1d4ed8; font-weight: bold;">PERTANYAAN</div><div style="font-size: 14px; font-weight: bold; color: #1d4ed8; margin-top:2px;">${counts['Menjawab Pertanyaan']}</div></td>
+                </tr>
+              </table>
+            </div>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px; page-break-inside: avoid;">
+              ${barImgBase64 ? `<div style="flex: 1; border: 1px solid #e2e8f0; padding: 8px; border-radius: 6px; text-align: center;"><img src="${barImgBase64}" style="max-width: 100%; max-height: 250px; margin: 0 auto; object-fit: contain;" /></div>` : ''}
+              ${pieImgBase64 ? `<div style="flex: 1; border: 1px solid #e2e8f0; padding: 8px; border-radius: 6px; text-align: center;"><img src="${pieImgBase64}" style="max-width: 100%; max-height: 250px; margin: 0 auto; object-fit: contain;" /></div>` : ''}
+            </div>
+          </div>
+        `;
+
+        const opt = { margin: [10, 10, 15, 10], filename: `Grafik_Literasi.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
+        html2pdf().from(htmlContent).set(opt).save().then(() => { btn.disabled = false; btn.innerHTML = originalText; });
+      });
+    }
+
+    function exportTableDirectPDF() {
+      if (filteredDataCache.length === 0) return alert("Tidak ada data...");
+      loadHtml2PdfScript(() => {
+        const btn = document.getElementById('btnExportTablePDF');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = `<span>⏳ Menyiapkan PDF...</span>`;
+
+        const valKecamatan = document.getElementById('filterKecamatan').value || "Semua Kecamatan";
+        const valSekolah = document.getElementById('filterSekolah').value || "Semua Sekolah";
+        const valKelas = document.getElementById('filterKelas').value ? "Kelas " + document.getElementById('filterKelas').value : "Semua Kelas";
+        const currentDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+
+        let htmlContent = `
+          <div style="padding: 15px; font-family: Arial, sans-serif; color: #333; background: #fff;">
+            <div style="text-align: center; margin-bottom: 8px; border-bottom: 2px solid #333; padding-bottom: 8px;">
+              <h2 style="margin: 0; font-size: 16px; font-weight: bold; text-transform: uppercase;">Rincian Hasil Asesmen Membaca Siswa</h2>
+              <p style="margin: 4px 0 0 0; font-size: 11px; font-weight: bold; color: #4338ca;">Sekolah: ${valSekolah} | ${valKelas} | Kecamatan: ${valKecamatan}</p>
+            </div>
+            <table style="width: 100%; border-collapse: collapse; font-size: 8.5px;">
+              <thead>
+                <tr style="background-color: #f1f5f9;">
+                  <th style="border: 1px solid #cbd5e1; padding: 5px;">No</th>
+                  <th style="border: 1px solid #cbd5e1; padding: 5px;">Nama Siswa</th>
+                  <th style="border: 1px solid #cbd5e1; padding: 5px;">Nama Guru</th>
+                  <th style="border: 1px solid #cbd5e1; padding: 5px;">Sekolah / Kelas</th>
+                  <th style="border: 1px solid #cbd5e1; padding: 5px;">Huruf</th>
+                  <th style="border: 1px solid #cbd5e1; padding: 5px;">Suku Kata</th>
+                  <th style="border: 1px solid #cbd5e1; padding: 5px;">Kata</th>
+                  <th style="border: 1px solid #cbd5e1; padding: 5px;">Paragraf</th>
+                  <th style="border: 1px solid #cbd5e1; padding: 5px;">Cerpen</th>
+                  <th style="border: 1px solid #cbd5e1; padding: 5px;">Pertanyaan</th>
+                </tr>
+              </thead>
+              <tbody>
+        `;
+
+        filteredDataCache.forEach((item, index) => {
+          htmlContent += `
+            <tr>
+              <td style="border: 1px solid #cbd5e1; padding: 4px; text-align: center;">${index + 1}</td>
+              <td style="border: 1px solid #cbd5e1; padding: 4px;"><strong>${item["Nama Siswa"] || '-'}</strong></td>
+              <td style="border: 1px solid #cbd5e1; padding: 4px;">${item["Nama Guru"] || '-'}</td>
+              <td style="border: 1px solid #cbd5e1; padding: 4px;">${item["Nama Sekolah"] || '-'} (${item["Kelas"] || '-'})</td>
+              <td style="border: 1px solid #cbd5e1; padding: 4px; text-align: center;">${item["Huruf"] ?? '-'}</td>
+              <td style="border: 1px solid #cbd5e1; padding: 4px; text-align: center;">${item["Suku Kata"] ?? '-'}</td>
+              <td style="border: 1px solid #cbd5e1; padding: 4px; text-align: center;">${item["Kata"] ?? '-'}</td>
+              <td style="border: 1px solid #cbd5e1; padding: 4px; text-align: center;">${item["Paragraf"] ?? '-'}</td>
+              <td style="border: 1px solid #cbd5e1; padding: 4px; text-align: center;">${item["Membaca Cerpen"] ?? '-'}</td>
+              <td style="border: 1px solid #cbd5e1; padding: 4px; text-align: center;">${item["Menjawab Pertanyaan"] ?? '-'}</td>
+            </tr>
+          `;
+        });
+
+        htmlContent += `</tbody></table></div>`;
+
+        const opt = { margin: [10, 10, 15, 10], filename: `Rincian_Asesmen.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
+        html2pdf().from(htmlContent).set(opt).save().then(() => { btn.disabled = false; btn.innerHTML = originalText; });
+      });
+    }
+  </script>
+</body>
+</html>
