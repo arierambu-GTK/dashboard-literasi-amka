@@ -22,7 +22,7 @@
           📚
         </div>
         <h2 id="authTitle" class="text-xl sm:text-2xl font-bold text-slate-800">Masuk ke Dashboard</h2>
-        <p id="authSubtitle" class="text-xs text-slate-500 mt-1">Silakan masuk menggunakan akun Admin atau Guest Anda</p>
+        <p id="authSubtitle" class="text-xs text-slate-500 mt-1">Gunakan Username/Email & Password Anda</p>
       </div>
 
       <!-- Pesan Alert / Error -->
@@ -31,13 +31,13 @@
       <!-- Form Login / Register -->
       <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-4">
         <div>
-          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Username</label>
-          <input type="text" id="authUsername" required placeholder="Masukkan username" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Username / Email</label>
+          <input type="text" id="authIdentifier" required placeholder="Masukkan username atau email" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
         </div>
 
         <div>
           <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Password</label>
-          <input type="password" id="authPassword" required placeholder="Masukkan password" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+          <input type="password" id="authPassword" required placeholder="Masukkan password (min. 6 karakter)" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
         </div>
 
         <button type="submit" id="btnAuthSubmit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg text-sm transition shadow">
@@ -47,7 +47,7 @@
 
       <!-- Toggle Antara Login & Register -->
       <div class="mt-6 pt-4 border-t border-slate-100 text-center text-xs text-slate-500">
-        <span id="authToggleText">Belum memiliki password Guest?</span>
+        <span id="authToggleText">Belum memiliki akun Guest?</span>
         <button onclick="toggleAuthMode()" id="btnToggleAuth" class="text-indigo-600 font-semibold hover:underline ml-1">
           Daftar Guest Baru
         </button>
@@ -59,7 +59,7 @@
   <!-- ================= AREA DASHBOARD ================= -->
   <div id="mainDashboard" class="hidden">
     
-    <!-- Header Dashboard (Responsif HP) -->
+    <!-- Header Dashboard -->
     <header class="bg-indigo-800 text-white py-4 sm:py-6 px-4 sm:px-8 shadow-md">
       <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -87,13 +87,13 @@
       <!-- Loading State -->
       <div id="loading" class="flex flex-col justify-center items-center py-16 sm:py-20">
         <div class="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-indigo-700"></div>
-        <span id="loadingText" class="mt-4 text-xs sm:text-sm text-slate-600 font-medium">Memuat Data dari Tabel...</span>
+        <span id="loadingText" class="mt-4 text-xs sm:text-sm text-slate-600 font-medium">Memuat Data Asesmen...</span>
       </div>
 
       <!-- Main Content Area -->
       <div id="dashboardContent" class="hidden space-y-4 sm:space-y-6">
 
-        <!-- Filter Bar (Grid 2 Kolom di HP, 5 Kolom di Layar Besar) -->
+        <!-- Filter Bar -->
         <div class="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-200 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
           <div>
             <label class="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase mb-1">Kecamatan</label>
@@ -219,7 +219,7 @@
           </div>
         </div>
 
-        <!-- Tabel Detail Data (Disembunyikan Otomatis untuk Guest) -->
+        <!-- Tabel Detail Data (Hanya untuk Admin) -->
         <div id="tableSection" class="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-200">
           <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
             <div>
@@ -262,11 +262,10 @@
   </div>
 
   <script>
-    // --- KONFIGURASI SUPABASE CLIENT & TABEL ---
+    // --- KONFIGURASI SUPABASE CLIENT ---
     const SUPABASE_URL = 'https://pjyxgbvsyhaoofbwwooh.supabase.co'; 
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqeXhnYnZzeWhhb29mYnd3b29oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2Mjc2NjAsImV4cCI6MjEwNjIwMzY2MH0.sHiVuPdP_StJioebd9RF8tMsTlrjs1QhmLo2qt-Cnk0'; 
     const TABEL_NAME = 'asesmen_literasi';
-    const TABEL_AUTH = 'password_amka'; 
 
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -276,6 +275,7 @@
     let chartProporsiMembacaInstance = null;
     let searchTimeout = null;
     let isRegisterMode = false;
+    let currentUserRole = 'guest';
 
     const CATEGORY_COLORS = {
       'Huruf': '#f97316',
@@ -295,7 +295,6 @@
       { key: 'Pertanyaan', label: 'Pertanyaan', type: 'min_correct', threshold: 5 }
     ];
 
-    // --- INISIALISASI SAAT HALAMAN DIMUAT ---
     document.addEventListener("DOMContentLoaded", function() {
       checkSession();
 
@@ -310,15 +309,26 @@
       }
     });
 
-    // --- MANAJEMEN SESI & HAK AKSES PERAN (ROLE) ---
-    function checkSession() {
-      const activeUser = JSON.parse(sessionStorage.getItem('dashboard_user'));
-      if (activeUser) {
+    // --- MANAJEMEN SESI SUPABASE AUTH ---
+    async function checkSession() {
+      const { data: { session } } = await _supabase.auth.getSession();
+      
+      if (session) {
+        // Ambil Profil & Role User dari DB
+        const { data: profile } = await _supabase
+          .from('user_profiles')
+          .select('username, role')
+          .eq('id', session.user.id)
+          .maybeSingle();
+
+        const username = profile ? profile.username : session.user.email.split('@')[0];
+        currentUserRole = profile ? profile.role : 'guest';
+
         document.getElementById('authSection').classList.add('hidden');
         document.getElementById('mainDashboard').classList.remove('hidden');
-        document.getElementById('userBadge').textContent = `👤 ${activeUser.username} (${activeUser.role.toUpperCase()})`;
+        document.getElementById('userBadge').textContent = `👤 ${username} (${currentUserRole.toUpperCase()})`;
         
-        applyRolePermissions(activeUser.role);
+        applyRolePermissions(currentUserRole);
         loadData();
       } else {
         document.getElementById('authSection').classList.remove('hidden');
@@ -339,7 +349,7 @@
       }
     }
 
-    // --- FUNGSI LOGIN & REGISTER ---
+    // --- LOGIKA LOGIN & REGISTER DENGAN SUPABASE AUTH ---
     function toggleAuthMode() {
       isRegisterMode = !isRegisterMode;
       const title = document.getElementById('authTitle');
@@ -352,15 +362,15 @@
 
       if (isRegisterMode) {
         title.textContent = "Daftar Akun Guest Baru";
-        subtitle.textContent = "Buat password Guest Anda sendiri untuk mengakses dashboard";
+        subtitle.textContent = "Buat akun Guest baru untuk mengakses dashboard";
         btn.textContent = "Daftarkan Guest Baru";
         toggleText.textContent = "Sudah memiliki akun?";
         btnToggle.textContent = "Kembali ke Login";
       } else {
         title.textContent = "Masuk ke Dashboard";
-        subtitle.textContent = "Silakan masuk menggunakan akun Admin atau Guest Anda";
+        subtitle.textContent = "Gunakan Username/Email & Password Anda";
         btn.textContent = "Masuk Sekarang";
-        toggleText.textContent = "Belum memiliki password Guest?";
+        toggleText.textContent = "Belum memiliki akun Guest?";
         btnToggle.textContent = "Daftar Guest Baru";
       }
     }
@@ -386,13 +396,16 @@
       e.preventDefault();
       hideAuthAlert();
 
-      const usernameVal = document.getElementById('authUsername').value.trim();
+      const inputVal = document.getElementById('authIdentifier').value.trim();
       const passwordVal = document.getElementById('authPassword').value.trim();
       const btn = document.getElementById('btnAuthSubmit');
 
-      if (!usernameVal || !passwordVal) {
-        return showAuthAlert("Username dan Password wajib diisi!");
+      if (!inputVal || !passwordVal) {
+        return showAuthAlert("Username/Email dan Password wajib diisi!");
       }
+
+      // Format Email Otomatis Jika Input Berupa Username Biasa
+      const emailVal = inputVal.includes('@') ? inputVal : `${inputVal.toLowerCase()}@literasi.id`;
 
       btn.disabled = true;
 
@@ -400,147 +413,63 @@
         if (isRegisterMode) {
           btn.innerHTML = `<span>⏳ Mendaftarkan...</span>`;
 
-          const { data: existingUser } = await _supabase
-            .from(TABEL_AUTH)
-            .select('username')
-            .eq('username', usernameVal)
-            .maybeSingle();
+          // 1. Supabase Auth Sign Up
+          const { data: authData, error: signUpError } = await _supabase.auth.signUp({
+            email: emailVal,
+            password: passwordVal,
+          });
 
-          if (existingUser) {
-            btn.disabled = false;
-            btn.textContent = "Daftarkan Guest Baru";
-            return showAuthAlert("Username sudah terdaftar! Gunakan username lain.");
+          if (signUpError) throw signUpError;
+
+          if (authData.user) {
+            // 2. Simpan Profil User ke user_profiles dengan Role Guest
+            const { error: profileError } = await _supabase
+              .from('user_profiles')
+              .insert([
+                { id: authData.user.id, username: inputVal, role: 'guest' }
+              ]);
+
+            if (profileError) console.error("Profile sync:", profileError);
           }
 
-          const { error: insertError } = await _supabase
-            .from(TABEL_AUTH)
-            .insert([
-              { username: usernameVal, password: passwordVal, role: 'guest' }
-            ]);
-
-          if (insertError) throw insertError;
-
-          showAuthAlert("Pendaftaran berhasil! Silakan login.", false);
-          setTimeout(() => {
-            toggleAuthMode();
-          }, 1200);
+          showAuthAlert("Pendaftaran Guest berhasil! Silakan masuk.", false);
+          setTimeout(() => { toggleAuthMode(); }, 1200);
 
         } else {
           btn.innerHTML = `<span>⏳ Memverifikasi...</span>`;
 
-          const { data: userData, error: loginError } = await _supabase
-            .from(TABEL_AUTH)
-            .select('*')
-            .eq('username', usernameVal)
-            .eq('password', passwordVal)
-            .maybeSingle();
+          // Supabase Auth Sign In
+          const { error: loginError } = await _supabase.auth.signInWithPassword({
+            email: emailVal,
+            password: passwordVal,
+          });
 
-          if (loginError) throw loginError;
-
-          if (!userData) {
+          if (loginError) {
             btn.disabled = false;
             btn.textContent = "Masuk Sekarang";
-            return showAuthAlert("Username atau Password salah!");
+            return showAuthAlert("Username/Email atau Password salah!");
           }
-
-          sessionStorage.setItem('dashboard_user', JSON.stringify({
-            username: userData.username,
-            role: userData.role || 'guest'
-          }));
 
           checkSession();
         }
 
       } catch (err) {
         console.error("Auth Error:", err);
-        showAuthAlert("Terjadi kesalahan: " + err.message);
+        showAuthAlert("Gagal: " + err.message);
       } finally {
         btn.disabled = false;
         if (!isRegisterMode) btn.textContent = "Masuk Sekarang";
       }
     }
 
-    function handleLogout() {
+    async function handleLogout() {
       if (confirm("Apakah Anda yakin ingin keluar?")) {
-        sessionStorage.removeItem('dashboard_user');
+        await _supabase.auth.signOut();
         checkSession();
       }
     }
 
-    // --- FUNGSI AUXILIARY FILTER & NAMA FILE ---
-    function getActiveFiltersSummary() {
-      const valKecamatan = document.getElementById('filterKecamatan').value;
-      const valSekolah = document.getElementById('filterSekolah').value;
-      const valKelas = document.getElementById('filterKelas').value;
-      const valJK = document.getElementById('filterJK').value;
-      const valCapaian = document.getElementById('filterCapaian').value;
-
-      let parts = [];
-      if (valKecamatan) parts.push(`Kec. ${valKecamatan}`);
-      if (valSekolah) parts.push(valSekolah);
-      if (valKelas) parts.push(`Kelas ${valKelas}`);
-      if (valJK) parts.push(`JK: ${valJK === 'L' ? 'Laki-laki' : 'Perempuan'}`);
-      if (valCapaian) parts.push(`Level: ${valCapaian}`);
-
-      return parts.length > 0 ? parts.join(" | ") : "Semua Wilayah & Kriteria";
-    }
-
-    function generatePDFFileName(prefix) {
-      const valKecamatan = document.getElementById('filterKecamatan').value;
-      const valSekolah = document.getElementById('filterSekolah').value;
-      const valKelas = document.getElementById('filterKelas').value;
-      const valJK = document.getElementById('filterJK').value;
-      const valCapaian = document.getElementById('filterCapaian').value;
-
-      let nameParts = [prefix];
-
-      if (valSekolah) nameParts.push(valSekolah);
-      if (valKelas) nameParts.push(`Kelas_${valKelas}`);
-      if (valKecamatan) nameParts.push(`Kec_${valKecamatan}`);
-      if (valJK) nameParts.push(`JK_${valJK}`);
-      if (valCapaian) nameParts.push(`Level_${valCapaian}`);
-
-      if (nameParts.length === 1) {
-        nameParts.push("Semua_Data");
-      }
-
-      const cleanStr = nameParts.join('_').replace(/[^a-zA-Z0-9_-]/g, '_').replace(/_+/g, '_');
-      return `${cleanStr}.pdf`;
-    }
-
-    // --- LAZY LOAD LIBRARIES ---
-    function loadJsPdfScripts(callback) {
-      if (window.jspdf && window.jspdf.jsPDF && window.jspdf.jsPDF.API && window.jspdf.jsPDF.API.autoTable) {
-        callback();
-        return;
-      }
-      
-      const script1 = document.createElement('script');
-      script1.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
-      script1.onload = () => {
-        const script2 = document.createElement('script');
-        script2.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js";
-        script2.onload = callback;
-        script2.onerror = () => alert("Gagal memuat plugin AutoTable PDF.");
-        document.head.appendChild(script2);
-      };
-      script1.onerror = () => alert("Gagal memuat pustaka jsPDF.");
-      document.head.appendChild(script1);
-    }
-
-    function loadHtml2PdfScript(callback) {
-      if (window.html2pdf) {
-        callback();
-        return;
-      }
-      const script = document.createElement('script');
-      script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
-      script.onload = callback;
-      script.onerror = () => alert("Gagal memuat pustaka pembuat PDF Grafik.");
-      document.head.appendChild(script);
-    }
-
-    // --- PEMANGGILAN DATA SUPABASE ---
+    // --- FUNGSI PEMANGGILAN DATA ASESMEN ---
     async function loadData() {
       const loadingEl = document.getElementById('loading');
       const contentEl = document.getElementById('dashboardContent');
@@ -556,7 +485,7 @@
         let hasMore = true;
 
         while (hasMore) {
-          loadingText.textContent = `Memuat Data dari Tabel... (${allData.length} terambil)`;
+          loadingText.textContent = `Memuat Data Asesmen... (${allData.length} terambil)`;
 
           const { data, error } = await _supabase
             .from(TABEL_NAME)
@@ -582,8 +511,12 @@
           return;
         }
 
+        // PERLINDUNGAN EKSTRA GUEST: Sensor Nama Siswa di Memori jika Role = Guest
         rawData = allData.map(item => {
           item.capaianLiterasi = calculateHighestLevel(item);
+          if (currentUserRole === 'guest') {
+            item["Nama Siswa"] = "--- PRIVAT ---";
+          }
           return item;
         });
 
@@ -751,8 +684,7 @@
       updateBarChart(filteredDataCache, kecVal, sekVal);
       updateProporsiMembacaChart(filteredDataCache);
       
-      const activeUser = JSON.parse(sessionStorage.getItem('dashboard_user'));
-      if (activeUser && activeUser.role !== 'guest') {
+      if (currentUserRole !== 'guest') {
         updateTable(filteredDataCache);
       }
     }
@@ -922,7 +854,79 @@
       tbody.appendChild(fragment);
     }
 
-    // --- TOMBOL 1: EKSPOR GRAFIK KE PDF ---
+    // --- FUNGSI AUXILIARY ---
+    function getActiveFiltersSummary() {
+      const valKecamatan = document.getElementById('filterKecamatan').value;
+      const valSekolah = document.getElementById('filterSekolah').value;
+      const valKelas = document.getElementById('filterKelas').value;
+      const valJK = document.getElementById('filterJK').value;
+      const valCapaian = document.getElementById('filterCapaian').value;
+
+      let parts = [];
+      if (valKecamatan) parts.push(`Kec. ${valKecamatan}`);
+      if (valSekolah) parts.push(valSekolah);
+      if (valKelas) parts.push(`Kelas ${valKelas}`);
+      if (valJK) parts.push(`JK: ${valJK === 'L' ? 'Laki-laki' : 'Perempuan'}`);
+      if (valCapaian) parts.push(`Level: ${valCapaian}`);
+
+      return parts.length > 0 ? parts.join(" | ") : "Semua Wilayah & Kriteria";
+    }
+
+    function generatePDFFileName(prefix) {
+      const valKecamatan = document.getElementById('filterKecamatan').value;
+      const valSekolah = document.getElementById('filterSekolah').value;
+      const valKelas = document.getElementById('filterKelas').value;
+      const valJK = document.getElementById('filterJK').value;
+      const valCapaian = document.getElementById('filterCapaian').value;
+
+      let nameParts = [prefix];
+
+      if (valSekolah) nameParts.push(valSekolah);
+      if (valKelas) nameParts.push(`Kelas_${valKelas}`);
+      if (valKecamatan) nameParts.push(`Kec_${valKecamatan}`);
+      if (valJK) nameParts.push(`JK_${valJK}`);
+      if (valCapaian) nameParts.push(`Level_${valCapaian}`);
+
+      if (nameParts.length === 1) {
+        nameParts.push("Semua_Data");
+      }
+
+      const cleanStr = nameParts.join('_').replace(/[^a-zA-Z0-9_-]/g, '_').replace(/_+/g, '_');
+      return `${cleanStr}.pdf`;
+    }
+
+    function loadJsPdfScripts(callback) {
+      if (window.jspdf && window.jspdf.jsPDF && window.jspdf.jsPDF.API && window.jspdf.jsPDF.API.autoTable) {
+        callback();
+        return;
+      }
+      
+      const script1 = document.createElement('script');
+      script1.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+      script1.onload = () => {
+        const script2 = document.createElement('script');
+        script2.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js";
+        script2.onload = callback;
+        script2.onerror = () => alert("Gagal memuat plugin AutoTable PDF.");
+        document.head.appendChild(script2);
+      };
+      script1.onerror = () => alert("Gagal memuat pustaka jsPDF.");
+      document.head.appendChild(script1);
+    }
+
+    function loadHtml2PdfScript(callback) {
+      if (window.html2pdf) {
+        callback();
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
+      script.onload = callback;
+      script.onerror = () => alert("Gagal memuat pustaka pembuat PDF Grafik.");
+      document.head.appendChild(script);
+    }
+
+    // --- EKSPOR GRAFIK PDF ---
     function exportChartsDirectPDF() {
       if (filteredDataCache.length === 0) return alert("Tidak ada data grafik untuk diekspor.");
       
@@ -1021,7 +1025,7 @@
       });
     }
 
-    // --- TOMBOL 2: EKSPOR TABEL RINCIAN KE PDF ---
+    // --- EKSPOR TABEL PDF ---
     function exportTableDirectPDF() {
       if (filteredDataCache.length === 0) return alert("Tidak ada data rincian siswa yang tampil untuk diekspor.");
 
