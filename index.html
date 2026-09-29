@@ -34,7 +34,7 @@
       <!-- Loading State -->
       <div id="loading" class="flex flex-col justify-center items-center py-20">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-700"></div>
-        <span class="mt-4 text-slate-600 font-medium">Memuat Data dari Supabase...</span>
+        <span id="loadingText" class="mt-4 text-slate-600 font-medium">Memuat Data dari Supabase...</span>
       </div>
 
       <!-- Main Content Area -->
@@ -205,10 +205,11 @@
   </div>
 
   <script>
-    // --- KONFIGURASI SUPABASE CLIENT ---
+    // --- KONFIGURASI SUPABASE CLIENT & NAMA TABEL ---
     const SUPABASE_URL = 'https://pjyxgbvsyhaoofbwwooh.supabase.co'; 
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqeXhnYnZzeWhhb29mYnd3b29oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2Mjc2NjAsImV4cCI6MjEwNjIwMzY2MH0.sHiVuPdP_StJioebd9RF8tMsTlrjs1QhmLo2qt-Cnk0'; // Pastikan isi anon_key publik Anda di sini
-    const TABEL_NAME = 'asesmen_literasi';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqeXhnYnZzeWhhb29mYnd3b29oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2Mjc2NjAsImV4cCI6MjEwNjIwMzY2MH0.sHiVuPdP_StJioebd9RF8tMsTlrjs1QhmLo2qt-Cnk0'; 
+    const TABEL_NAME = 'asesmen_literasi'; // Konstanta Nama Tabel
+
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let rawData = [];
@@ -226,7 +227,6 @@
       'Pertanyaan': '#3b82f6'
     };
 
-    // Stage level disesuaikan persis dengan nama kolom di Supabase
     const LITERACY_STAGES = [
       { key: 'Huruf', label: 'Huruf', type: 'max_error', threshold: 2 },
       { key: 'Suku Kata', label: 'Suku Kata', type: 'max_error', threshold: 2 },
@@ -236,6 +236,27 @@
       { key: 'Pertanyaan', label: 'Pertanyaan', type: 'min_correct', threshold: 5 }
     ];
 
+    // --- LAZY LOAD LIBRARY JS-PDF & AUTO-TABLE (BEBAS TERPOTONG) ---
+    function loadJsPdfScripts(callback) {
+      if (window.jspdf && window.jspdf.jsPDF && window.jspdf.jsPDF.API && window.jspdf.jsPDF.API.autoTable) {
+        callback();
+        return;
+      }
+      
+      const script1 = document.createElement('script');
+      script1.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+      script1.onload = () => {
+        const script2 = document.createElement('script');
+        script2.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js";
+        script2.onload = callback;
+        script2.onerror = () => alert("Gagal memuat plugin AutoTable PDF.");
+        document.head.appendChild(script2);
+      };
+      script1.onerror = () => alert("Gagal memuat pustaka jsPDF.");
+      document.head.appendChild(script1);
+    }
+
+    // --- LAZY LOAD LIBRARY HTML2PDF (KHUSUS GRAFIK) ---
     function loadHtml2PdfScript(callback) {
       if (window.html2pdf) {
         callback();
@@ -244,7 +265,7 @@
       const script = document.createElement('script');
       script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
       script.onload = callback;
-      script.onerror = () => alert("Gagal memuat pustaka pembuat PDF.");
+      script.onerror = () => alert("Gagal memuat pustaka pembuat PDF Grafik.");
       document.head.appendChild(script);
     }
 
@@ -261,66 +282,69 @@
       loadData();
     });
 
-    // --- FUNGSI PEMANGGILAN DATA SUPABASE ---
+    // --- FUNGSI PEMANGGILAN SELURUH DATA DENGAN PAGINASI OTOMATIS ---
     async function loadData() {
-  const loadingEl = document.getElementById('loading');
-  const contentEl = document.getElementById('dashboardContent');
-  
-  loadingEl.classList.remove('hidden');
-  contentEl.classList.add('hidden');
+      const loadingEl = document.getElementById('loading');
+      const contentEl = document.getElementById('dashboardContent');
+      const loadingText = document.getElementById('loadingText');
+      
+      loadingEl.classList.remove('hidden');
+      contentEl.classList.add('hidden');
 
-  try {
-    let allData = [];
-    let from = 0;
-    const step = 1000;
-    let hasMore = true;
+      try {
+        let allData = [];
+        let from = 0;
+        const step = 1000;
+        let hasMore = true;
 
-    while (hasMore) {
-      // Menggunakan TABEL_NAME di sini
-      const { data, error } = await _supabase
-        .from(TABEL_NAME)
-        .select('*')
-        .range(from, from + step - 1);
+        while (hasMore) {
+          loadingText.textContent = `Memuat Data dari Supabase... (${allData.length} terambil)`;
 
-      if (error) throw error;
+          const { data, error } = await _supabase
+            .from(TABEL_NAME)
+            .select('*')
+            .range(from, from + step - 1);
 
-      if (data && data.length > 0) {
-        allData = allData.concat(data);
-        if (data.length < step) {
-          hasMore = false;
-        } else {
-          from += step;
+          if (error) throw error;
+
+          if (data && data.length > 0) {
+            allData = allData.concat(data);
+            if (data.length < step) {
+              hasMore = false;
+            } else {
+              from += step;
+            }
+          } else {
+            hasMore = false;
+          }
         }
-      } else {
-        hasMore = false;
+
+        console.log("Total seluruh data berhasil diambil:", allData.length);
+
+        if (allData.length === 0) {
+          alert(`Tabel '${TABEL_NAME}' di Supabase masih kosong.`);
+          return;
+        }
+
+        rawData = allData.map(item => {
+          item.capaianLiterasi = calculateHighestLevel(item);
+          return item;
+        });
+
+        populateFilterOptions();
+        applyFilters();
+
+        loadingEl.classList.add('hidden');
+        contentEl.classList.remove('hidden');
+
+      } catch (err) {
+        console.error("Detail Error:", err);
+        alert("Gagal mengambil seluruh data: " + err.message);
+      } finally {
+        loadingEl.classList.add('hidden');
       }
     }
 
-    console.log("Total seluruh data berhasil diambil:", allData.length);
-
-    if (allData.length === 0) {
-      alert(`Tabel '${TABEL_NAME}' di Supabase masih kosong.`);
-      return;
-    }
-
-    rawData = allData.map(item => {
-      item.capaianLiterasi = calculateHighestLevel(item);
-      return item;
-    });
-
-    populateFilterOptions();
-    applyFilters();
-
-    loadingEl.classList.add('hidden');
-    contentEl.classList.remove('hidden');
-
-  } catch (err) {
-    console.error("Detail Error:", err);
-    alert("Gagal mengambil seluruh data: " + err.message);
-  } finally {
-    loadingEl.classList.add('hidden');
-  }
-}
     function calculateHighestLevel(row) {
       let highestPassed = "Belum Terdeteksi";
 
@@ -631,8 +655,9 @@
       tbody.appendChild(fragment);
     }
 
+    // --- TOMBOL 1: EKSPOR GRAFIK KE PDF ---
     function exportChartsDirectPDF() {
-      if (filteredDataCache.length === 0) return alert("Tidak ada data grafik...");
+      if (filteredDataCache.length === 0) return alert("Tidak ada data grafik untuk diekspor.");
       loadHtml2PdfScript(() => {
         const btn = document.getElementById('btnExportChartsPDF');
         const originalText = btn.innerHTML;
@@ -691,71 +716,98 @@
       });
     }
 
+    // --- TOMBOL 2: EKSPOR TABEL RINCIAN KE PDF (100% BEBAS TERPOTONG BERAPAPUN JUMLAH DATA) ---
     function exportTableDirectPDF() {
-      if (filteredDataCache.length === 0) return alert("Tidak ada data...");
-      loadHtml2PdfScript(() => {
+      if (filteredDataCache.length === 0) return alert("Tidak ada data rincian siswa yang tampil untuk diekspor.");
+
+      loadJsPdfScripts(() => {
         const btn = document.getElementById('btnExportTablePDF');
         const originalText = btn.innerHTML;
         btn.disabled = true;
-        btn.innerHTML = `<span>⏳ Menyiapkan PDF...</span>`;
+        btn.innerHTML = `<span>⏳ Menyiapkan PDF (${filteredDataCache.length} Data)...</span>`;
 
-        const valKecamatan = document.getElementById('filterKecamatan').value || "Semua Kecamatan";
-        const valSekolah = document.getElementById('filterSekolah').value || "Semua Sekolah";
-        const valKelas = document.getElementById('filterKelas').value ? "Kelas " + document.getElementById('filterKelas').value : "Semua Kelas";
-        const currentDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-        const tanggalAsesmenVal = filteredDataCache[0] ? (filteredDataCache[0]["Tanggal Asesmen"] || '-') : '-';
+        setTimeout(() => {
+          try {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 
-        let htmlContent = `
-          <div style="padding: 15px; font-family: Arial, sans-serif; color: #333; background: #fff;">
-            <div style="text-align: center; margin-bottom: 8px; border-bottom: 2px solid #333; padding-bottom: 8px;">
-              <h2 style="margin: 0; font-size: 16px; font-weight: bold; text-transform: uppercase;">Rincian Hasil Asesmen Membaca Siswa</h2>
-              <p style="margin: 4px 0 0 0; font-size: 11px; font-weight: bold; color: #4338ca;">Sekolah: ${valSekolah} | ${valKelas} | Kecamatan: ${valKecamatan}</p>
-            </div>
-            <table style="width: 100%; font-size: 9px; color: #555; margin-bottom: 10px; border: none;">
-              <tr>
-                <td style="text-align: left; border: none; padding: 0;">Tanggal Unduh: ${currentDate} | Total Data Tampil: ${filteredDataCache.length} Siswa</td>
-                <td style="text-align: right; border: none; padding: 0; font-weight: bold;">Tanggal Asesmen: ${tanggalAsesmenVal}</td>
-              </tr>
-            </table>
-            <table style="width: 100%; border-collapse: collapse; font-size: 8.5px;">
-              <thead>
-                <tr style="background-color: #f1f5f9;">
-                  <th style="border: 1px solid #cbd5e1; padding: 5px;">No</th>
-                  <th style="border: 1px solid #cbd5e1; padding: 5px;">Nama Siswa</th>
-                  <th style="border: 1px solid #cbd5e1; padding: 5px;">Nama Guru</th>
-                  <th style="border: 1px solid #cbd5e1; padding: 5px;">Sekolah / Kelas</th>
-                  <th style="border: 1px solid #cbd5e1; padding: 5px;">Huruf</th>
-                  <th style="border: 1px solid #cbd5e1; padding: 5px;">Suku Kata</th>
-                  <th style="border: 1px solid #cbd5e1; padding: 5px;">Kata</th>
-                  <th style="border: 1px solid #cbd5e1; padding: 5px;">Paragraf</th>
-                  <th style="border: 1px solid #cbd5e1; padding: 5px;">Cerita Pendek</th>
-                  <th style="border: 1px solid #cbd5e1; padding: 5px;">Pertanyaan</th>
-                </tr>
-              </thead>
-              <tbody>
-        `;
+            const valKecamatan = document.getElementById('filterKecamatan').value || "Semua Kecamatan";
+            const valSekolah = document.getElementById('filterSekolah').value || "Semua Sekolah";
+            const valKelas = document.getElementById('filterKelas').value ? "Kelas " + document.getElementById('filterKelas').value : "Semua Kelas";
+            const currentDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+            const tanggalAsesmenVal = filteredDataCache[0] ? (filteredDataCache[0]["Tanggal Asesmen"] || '-') : '-';
 
-        filteredDataCache.forEach((item, index) => {
-          htmlContent += `
-            <tr>
-              <td style="border: 1px solid #cbd5e1; padding: 4px; text-align: center;">${index + 1}</td>
-              <td style="border: 1px solid #cbd5e1; padding: 4px;"><strong>${item["Nama Siswa"] || '-'}</strong></td>
-              <td style="border: 1px solid #cbd5e1; padding: 4px;">${item["Nama Guru"] || '-'}</td>
-              <td style="border: 1px solid #cbd5e1; padding: 4px;">${item["Nama Sekolah"] || '-'} (${item["Kelas"] || '-'})</td>
-              <td style="border: 1px solid #cbd5e1; padding: 4px; text-align: center;">${item["Huruf"] ?? '-'}</td>
-              <td style="border: 1px solid #cbd5e1; padding: 4px; text-align: center;">${item["Suku Kata"] ?? '-'}</td>
-              <td style="border: 1px solid #cbd5e1; padding: 4px; text-align: center;">${item["Kata"] ?? '-'}</td>
-              <td style="border: 1px solid #cbd5e1; padding: 4px; text-align: center;">${item["Paragraf"] ?? '-'}</td>
-              <td style="border: 1px solid #cbd5e1; padding: 4px; text-align: center;">${item["Cerita Pendek"] ?? '-'}</td>
-              <td style="border: 1px solid #cbd5e1; padding: 4px; text-align: center;">${item["Pertanyaan"] ?? '-'}</td>
-            </tr>
-          `;
-        });
+            // Judul Header Laporan
+            doc.setFontSize(13);
+            doc.setFont("helvetica", "bold");
+            doc.text("RINCIAN HASIL ASESMEN MEMBACA SISWA", doc.internal.pageSize.getWidth() / 2, 12, { align: "center" });
 
-        htmlContent += `</tbody></table></div>`;
+            doc.setFontSize(9);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(67, 56, 202); // Warna Indigo
+            doc.text(`Sekolah: ${valSekolah} | ${valKelas} | Kecamatan: ${valKecamatan}`, doc.internal.pageSize.getWidth() / 2, 17, { align: "center" });
+            
+            doc.setFontSize(8);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(85, 85, 85);
+            doc.text(`Tanggal Unduh: ${currentDate} | Total Data: ${filteredDataCache.length} Siswa`, 14, 23);
+            doc.text(`Tanggal Asesmen: ${tanggalAsesmenVal}`, doc.internal.pageSize.getWidth() - 14, 23, { align: "right" });
 
-        const opt = { margin: [10, 10, 15, 10], filename: `Rincian_Asesmen.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
-        html2pdf().from(htmlContent).set(opt).save().then(() => { btn.disabled = false; btn.innerHTML = originalText; });
+            // Format Data Kolom Tabel
+            const tableHeaders = [["No", "Nama Siswa", "Nama Guru", "Sekolah / Kelas", "Huruf", "Suku Kata", "Kata", "Paragraf", "Cerita Pendek", "Pertanyaan"]];
+            const tableBody = filteredDataCache.map((item, index) => [
+              index + 1,
+              item["Nama Siswa"] || '-',
+              item["Nama Guru"] || '-',
+              `${item["Nama Sekolah"] || '-'} (${item["Kelas"] || '-'})`,
+              item["Huruf"] ?? '-',
+              item["Suku Kata"] ?? '-',
+              item["Kata"] ?? '-',
+              item["Paragraf"] ?? '-',
+              item["Cerita Pendek"] ?? '-',
+              item["Pertanyaan"] ?? '-'
+            ]);
+
+            // Ekspor Tabel Native via AutoTable
+            doc.autoTable({
+              startY: 26,
+              head: tableHeaders,
+              body: tableBody,
+              theme: 'grid',
+              styles: { fontSize: 7.5, cellPadding: 2 },
+              headStyles: { fillColor: [241, 245, 249], textColor: [51, 65, 85], fontStyle: 'bold', halign: 'center' },
+              columnStyles: {
+                0: { halign: 'center', cellWidth: 10 },
+                4: { halign: 'center' },
+                5: { halign: 'center' },
+                6: { halign: 'center' },
+                7: { halign: 'center' },
+                8: { halign: 'center' },
+                9: { halign: 'center' }
+              },
+              didDrawPage: (data) => {
+                const pageCount = doc.internal.getNumberOfPages();
+                doc.setFontSize(7);
+                doc.setTextColor(128, 128, 128);
+                doc.text(
+                  `Dicetak dari Dashboard Literasi Asesmen Siswa | Halaman ${data.pageNumber} dari ${pageCount}`,
+                  14,
+                  doc.internal.pageSize.getHeight() - 8
+                );
+              }
+            });
+
+            const cleanSekolah = valSekolah.replace(/\s+/g, '_');
+            const cleanKecamatan = valKecamatan.replace(/\s+/g, '_');
+            doc.save(`Rincian_Asesmen_${cleanSekolah}_${cleanKecamatan}.pdf`);
+
+          } catch (err) {
+            alert("Gagal mengekspor PDF Rincian: " + err.message);
+          } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+          }
+        }, 100);
       });
     }
   </script>
