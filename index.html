@@ -1085,19 +1085,22 @@
       document.head.appendChild(script);
     }
 
-// --- EKSPOR GRAFIK KE PDF (SOLUSI GRAFIK TIDAK MUNCUL) ---
+// --- EKSPOR GRAFIK KE PDF (METODE DIRECT CANVAS TO JSPDF) ---
 function exportChartsDirectPDF() {
   if (filteredDataCache.length === 0) return alert("Tidak ada data grafik untuk diekspor.");
   
-  loadHtml2PdfScript(() => {
+  // Pastikan pustaka jsPDF dimuat
+  loadJsPdfScripts(() => {
     const btn = document.getElementById('btnExportChartsPDF');
     const originalText = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = `<span>⏳ Menyiapkan PDF ...</span>`;
 
     setTimeout(async () => {
-      let tempContainer = null;
       try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
         const valKecamatan = document.getElementById('filterKecamatan').value || "Semua Kecamatan";
         const valSekolah = document.getElementById('filterSekolah').value || "Semua Sekolah";
         const rawKelas = document.getElementById('filterKelas').value;
@@ -1110,130 +1113,129 @@ function exportChartsDirectPDF() {
 
         const currentDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
         const tanggalAsesmenVal = filteredDataCache[0] ? (filteredDataCache[0]["Tanggal Asesmen"] || '-') : '-';
-        
-        // 1. Ambil Gambar langsung dari Elemen Canvas aktif di DOM
-        const canvasBar = document.getElementById('chartBarKecamatan');
-        const canvasPie = document.getElementById('chartProporsiMembaca');
 
-        const barImgBase64 = canvasBar ? canvasBar.toDataURL('image/png', 1.0) : '';
-        const pieImgBase64 = canvasPie ? canvasPie.toDataURL('image/png', 1.0) : '';
+        // 1. KOP HEADER PDF
+        doc.setFontSize(13);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(15, 23, 42);
+        doc.text("LAPORAN CAPAIAN LITERASI SISWA", doc.internal.pageSize.getWidth() / 2, 12, { align: "center" });
 
-        // 2. Buat Kontainer Sementara di Layar (posisi absolute, z-index rendah agar tidak menutupi UI utama)
-        tempContainer = document.createElement('div');
-        tempContainer.style.position = 'absolute';
-        tempContainer.style.top = '0';
-        tempContainer.style.left = '0';
-        tempContainer.style.width = '750px';
-        tempContainer.style.zIndex = '-9999';
-        tempContainer.style.opacity = '1';
-        tempContainer.style.backgroundColor = '#ffffff';
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(67, 56, 202);
+        doc.text(`Sekolah: ${valSekolah} | ${valKelas} | Kecamatan: ${valKecamatan}`, doc.internal.pageSize.getWidth() / 2, 17, { align: "center" });
 
-        tempContainer.innerHTML = `
-          <div style="width: 100%; padding: 20px; font-family: Arial, sans-serif; color: #1e293b; background: #ffffff; box-sizing: border-box;">
-            
-            <!-- Header / Kop -->
-            <div style="text-align: center; margin-bottom: 12px; border-bottom: 2px solid #334155; padding-bottom: 8px;">
-              <h2 style="margin: 0; font-size: 16px; font-weight: bold; text-transform: uppercase; color: #0f172a;">Laporan Capaian Literasi Siswa</h2>
-              <p style="margin: 4px 0 0 0; font-size: 11px; font-weight: bold; color: #4338ca;">
-                Sekolah: ${valSekolah} | ${valKelas} | Kecamatan: ${valKecamatan}
-              </p>
-            </div>
+        // Line Divider
+        doc.setLineWidth(0.5);
+        doc.setDrawColor(51, 65, 85);
+        doc.line(10, 20, doc.internal.pageSize.getWidth() - 10, 20);
 
-            <!-- Meta Information -->
-            <table style="width: 100%; font-size: 9px; color: #64748b; margin-bottom: 12px;">
-              <tr>
-                <td style="text-align: left; padding: 0;">Tanggal Unduh: ${currentDate} | Total: ${totalSiswa} Siswa</td>
-                <td style="text-align: right; padding: 0; font-weight: bold; color: #334155;">Tanggal Asesmen: ${tanggalAsesmenVal}</td>
-              </tr>
-            </table>
-            
-            <!-- Ringkasan Angka -->
-            <div style="margin-bottom: 16px; page-break-inside: avoid;">
-              <h3 style="font-size: 11px; font-weight: bold; margin: 0 0 6px 0; color: #0f172a;">📊 Ringkasan Capaian Siswa</h3>
-              <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 9px; background: #ffffff;">
-                <tr style="background-color: #f8fafc;">
-                  <td style="border: 1px solid #cbd5e1; padding: 6px; width: 14%;"><div style="color: #475569; font-size: 8px; font-weight: bold;">TOTAL</div><div style="font-size: 12px; font-weight: bold; color: #0f172a; margin-top:2px;">${totalSiswa}</div></td>
-                  <td style="border: 1px solid #fed7aa; padding: 6px; width: 14%; background-color: #fff7ed;"><div style="color: #c2410c; font-size: 8px; font-weight: bold;">HURUF</div><div style="font-size: 12px; font-weight: bold; color: #c2410c; margin-top:2px;">${counts['Huruf']}</div></td>
-                  <td style="border: 1px solid #fef08a; padding: 6px; width: 14%; background-color: #fefce8;"><div style="color: #a16207; font-size: 8px; font-weight: bold;">SUKU KATA</div><div style="font-size: 12px; font-weight: bold; color: #a16207; margin-top:2px;">${counts['Suku Kata']}</div></td>
-                  <td style="border: 1px solid #fde68a; padding: 6px; width: 14%; background-color: #fffbeb;"><div style="color: #b45309; font-size: 8px; font-weight: bold;">KATA</div><div style="font-size: 12px; font-weight: bold; color: #b45309; margin-top:2px;">${counts['Kata']}</div></td>
-                  <td style="border: 1px solid #a7f3d0; padding: 6px; width: 14%; background-color: #ecfdf5;"><div style="color: #047857; font-size: 8px; font-weight: bold;">PARAGRAF</div><div style="font-size: 12px; font-weight: bold; color: #047857; margin-top:2px;">${counts['Paragraf']}</div></td>
-                  <td style="border: 1px solid #99f6e4; padding: 6px; width: 14%; background-color: #f0fdfa;"><div style="color: #0f766e; font-size: 8px; font-weight: bold;">CERITA</div><div style="font-size: 12px; font-weight: bold; color: #0f766e; margin-top:2px;">${counts['Cerita Pendek']}</div></td>
-                  <td style="border: 1px solid #bfdbfe; padding: 6px; width: 14%; background-color: #eff6ff;"><div style="color: #1d4ed8; font-size: 8px; font-weight: bold;">PERTANYAAN</div><div style="font-size: 12px; font-weight: bold; color: #1d4ed8; margin-top:2px;">${counts['Pertanyaan']}</div></td>
-                </tr>
-              </table>
-            </div>
+        doc.setFontSize(7.5);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(100, 116, 139);
+        doc.text(`Tanggal Unduh: ${currentDate} | Total: ${totalSiswa} Siswa`, 10, 24);
+        doc.text(`Tanggal Asesmen: ${tanggalAsesmenVal}`, doc.internal.pageSize.getWidth() - 10, 24, { align: "right" });
 
-            <!-- Area Grafik Vertikal -->
-            <div style="display: flex; flex-direction: column; gap: 16px; background: #ffffff;">
-              
-              <!-- Grafik Batang -->
-              <div style="border: 1px solid #e2e8f0; padding: 8px; border-radius: 8px; text-align: center; background: #ffffff; page-break-inside: avoid;">
-                <div style="font-size: 9px; font-weight: bold; color: #4338ca; margin-bottom: 6px; background: #e0e7ff; padding: 4px; border-radius: 4px;">
-                  📌 Filter Grafik Batang: ${filterSummaryText}
-                </div>
-                <img id="pdfImgBar" src="${barImgBase64}" style="width: 100%; max-height: 250px; object-fit: contain; display: block; margin: 0 auto;" />
-              </div>
+        // 2. TABEL RINGKASAN CAPAIAN (AutoTable)
+        const summaryHeaders = [["TOTAL", "HURUF", "SUKU KATA", "KATA", "PARAGRAF", "CERITA", "PERTANYAAN"]];
+        const summaryData = [[
+          totalSiswa,
+          counts['Huruf'],
+          counts['Suku Kata'],
+          counts['Kata'],
+          counts['Paragraf'],
+          counts['Cerita Pendek'],
+          counts['Pertanyaan']
+        ]];
 
-              <!-- Grafik Donat -->
-              <div style="border: 1px solid #e2e8f0; padding: 8px; border-radius: 8px; text-align: center; background: #ffffff; page-break-inside: avoid;">
-                <div style="font-size: 9px; font-weight: bold; color: #0f766e; margin-bottom: 6px; background: #ccfbf1; padding: 4px; border-radius: 4px;">
-                  📌 Filter Proporsi Kemampuan: ${filterSummaryText}
-                </div>
-                <div style="width: 100%; max-width: 250px; margin: 0 auto;">
-                  <img id="pdfImgPie" src="${pieImgBase64}" style="width: 100%; height: auto; object-fit: contain; display: block; margin: 0 auto;" />
-                </div>
-              </div>
+        doc.autoTable({
+          startY: 27,
+          margin: { left: 10, right: 10 },
+          head: summaryHeaders,
+          body: summaryData,
+          theme: 'grid',
+          styles: { fontSize: 8, fontStyle: 'bold', halign: 'center', cellPadding: 2.5 },
+          headStyles: { fillColor: [248, 250, 252], textColor: [15, 23, 42] },
+          columnStyles: {
+            0: { textColor: [15, 23, 42] },
+            1: { textColor: [194, 65, 12], fillColor: [255, 247, 237] },
+            2: { textColor: [161, 98, 7], fillColor: [254, 252, 232] },
+            3: { textColor: [180, 83, 9], fillColor: [255, 251, 235] },
+            4: { textColor: [4, 120, 87], fillColor: [236, 253, 245] },
+            5: { textColor: [15, 118, 110], fillColor: [240, 253, 250] },
+            6: { textColor: [29, 78, 216], fillColor: [239, 246, 255] }
+          }
+        });
 
-            </div>
+        let currentY = doc.lastAutoTable.finalY + 6;
 
-          </div>
-        `;
+        // 3. FUNGSI PEMBANTU: KONVERSI CANVAS DENGAN BACKGROUND PUTIH PADAT
+        const getSolidBase64FromCanvas = (canvasId) => {
+          const originalCanvas = document.getElementById(canvasId);
+          if (!originalCanvas) return null;
 
-        document.body.appendChild(tempContainer);
+          // Buat canvas temp untuk menggambar background putih solid (mencegah gambar transparan)
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = originalCanvas.width;
+          tempCanvas.height = originalCanvas.height;
+          const ctx = tempCanvas.getContext('2d');
 
-        // 3. Pastikan Browser Memuat Gambar Base64 ke dalam Tag <img> Sebelum Digenerate
-        const imgBarEl = tempContainer.querySelector('#pdfImgBar');
-        const imgPieEl = tempContainer.querySelector('#pdfImgPie');
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+          ctx.drawImage(originalCanvas, 0, 0);
 
-        const waitImageLoad = (img) => {
-          return new Promise((resolve) => {
-            if (!img || img.complete) return resolve();
-            img.onload = resolve;
-            img.onerror = resolve;
-          });
+          return tempCanvas.toDataURL('image/jpeg', 0.95);
         };
 
-        await Promise.all([waitImageLoad(imgBarEl), waitImageLoad(imgPieEl)]);
-        await new Promise(resolve => setTimeout(resolve, 200)); // Jeda render tambahan
+        // 4. EMBED GRAFIK BATANG KE PDF
+        const barBase64 = getSolidBase64FromCanvas('chartBarKecamatan');
+        if (barBase64) {
+          doc.setFontSize(8);
+          doc.setFont("helvetica", "bold");
+          doc.setTextColor(67, 56, 202);
+          doc.text(`📌 Filter Grafik Batang: ${filterSummaryText}`, 10, currentY);
 
+          // Render gambar canvas langsung ke dokumen PDF
+          const imgWidth = doc.internal.pageSize.getWidth() - 20; // Lebar 190mm
+          const imgHeight = 75; // Tinggi proporsional
+          
+          doc.addImage(barBase64, 'JPEG', 10, currentY + 2, imgWidth, imgHeight);
+          currentY += imgHeight + 10;
+        }
+
+        // 5. EMBED GRAFIK DONAT KE PDF
+        const pieBase64 = getSolidBase64FromCanvas('chartProporsiMembaca');
+        if (pieBase64) {
+          // Cek sisa halaman, jika tidak cukup buat halaman baru
+          if (currentY + 70 > doc.internal.pageSize.getHeight() - 10) {
+            doc.addPage();
+            currentY = 15;
+          }
+
+          doc.setFontSize(8);
+          doc.setFont("helvetica", "bold");
+          doc.setTextColor(15, 118, 110);
+          doc.text(`📌 Filter Proporsi Kemampuan: ${filterSummaryText}`, 10, currentY);
+
+          const pieWidth = 90; // Ukuran grafik donat dibuat lebih ringkas
+          const pieHeight = 70;
+          const posX = (doc.internal.pageSize.getWidth() - pieWidth) / 2; // Posisi tengah
+
+          doc.addImage(pieBase64, 'JPEG', posX, currentY + 2, pieWidth, pieHeight);
+        }
+
+        // 6. SIMPAN FILE PDF
         const fileNameStr = generatePDFFileName("Grafik_Literasi");
-        
-        const opt = { 
-          margin: [8, 8, 8, 8], 
-          filename: fileNameStr, 
-          image: { type: 'jpeg', quality: 0.98 }, 
-          html2canvas: { 
-            scale: 2, 
-            useCORS: true, 
-            logging: false,
-            scrollY: 0,
-            scrollX: 0
-          }, 
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
-        };
-
-        await html2pdf().from(tempContainer).set(opt).save();
+        doc.save(fileNameStr);
 
       } catch (err) {
+        console.error(err);
         alert("Gagal mengekspor PDF Grafik: " + err.message);
       } finally {
-        if (tempContainer && tempContainer.parentNode) {
-          tempContainer.parentNode.removeChild(tempContainer);
-        }
         btn.disabled = false;
         btn.innerHTML = originalText;
       }
-    }, 150);
+    }, 200);
   });
 }
 
