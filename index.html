@@ -1182,11 +1182,11 @@
               let currentY = doc.lastAutoTable.finalY + 6;
 
               // Judul Grafik Dinamis Sesuai Filter yang Aktif
-              let titleBar = "📊 Capaian Per Kecamatan";
+              let titleBar = "Capaian Per Kecamatan";
               if (valSekolah !== "Semua Sekolah") {
-                titleBar = `📊 Capaian Per Kelas (${valSekolah})`;
+                titleBar = `Capaian Per Kelas (${valSekolah})`;
               } else if (valKecamatan !== "Semua Kecamatan") {
-                titleBar = `📊 Capaian Per Sekolah (Kec. ${valKecamatan})`;
+                titleBar = `Capaian Per Sekolah (Kec. ${valKecamatan})`;
               }
 
               // 3. Tangkap Gambar Resolusi Tinggi (3x Super Sampling)
@@ -1220,7 +1220,7 @@
               doc.setFontSize(10);
               doc.setFont("helvetica", "bold");
               doc.setTextColor(15, 23, 42);
-              doc.text("🍰 Proporsi & Detail Capaian Membaca", rightColX, currentY);
+              doc.text("Proporsi & Detail Capaian Membaca", rightColX, currentY);
 
               // Render Gambar Donat dengan Proporsi Pas (Bentuk Bujur Sangkar Ringkas)
               const pieSize = 72; // mm
