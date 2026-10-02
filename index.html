@@ -83,7 +83,6 @@
           <span id="userBadge" class="bg-indigo-900/80 text-indigo-200 px-2.5 py-1 rounded-full text-[11px] font-semibold border border-indigo-700/60 max-w-[120px] sm:max-w-none truncate">
             👤 User
           </span>
-          <!-- Tombol Refresh dipaksa Ambil Data Baru (forceRefresh = true) -->
           <button onclick="loadData(true)" class="p-2 sm:px-3 sm:py-1.5 bg-indigo-700 hover:bg-indigo-600 text-white rounded-lg text-xs font-medium transition active:scale-95 flex items-center gap-1" title="Refresh Data">
             <span>🔄</span> <span class="hidden sm:inline">Refresh</span>
           </button>
@@ -236,7 +235,7 @@
               <p class="text-[11px] text-slate-500">Perbandingan jenjang membaca siswa</p>
             </div>
             <button onclick="exportChartsDirectPDF()" id="btnExportChartsPDF" class="w-full sm:w-auto bg-indigo-600 active:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-md shadow-indigo-500/20 flex items-center justify-center gap-2">
-              <span>📊</span> Ekspor PDF Grafik
+              <span>📊</span> Ekspor PDF Grafik (Landscape)
             </button>
           </div>
 
@@ -287,7 +286,7 @@
             <div class="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
               <input type="text" id="searchInput" placeholder="Cari nama, sekolah, kecamatan..." class="bg-slate-50 border border-slate-300 text-xs rounded-xl p-2.5 w-full sm:w-64 focus:ring-2 focus:ring-indigo-500 outline-none">
               <button onclick="exportTableDirectPDF()" id="btnExportTablePDF" class="w-full sm:w-auto bg-emerald-600 active:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 whitespace-nowrap">
-                <span>📄</span> Ekspor Rincian PDF
+                <span>📄</span> Ekspor Rincian PDF (Landscape)
               </button>
             </div>
           </div>
@@ -588,7 +587,6 @@
       const contentEl = document.getElementById('dashboardContent');
       const loadingText = document.getElementById('loadingText');
       
-      // Cek Session Cache terlebih dahulu (Kecuali tombol refresh diklik)
       const cachedData = sessionStorage.getItem('amka_literasi_cache');
       if (!forceRefresh && cachedData) {
         try {
@@ -609,7 +607,6 @@
       try {
         loadingText.textContent = "Menghitung total data...";
 
-        // 1. Dapatkan total jumlah baris data terlebih dahulu (Fast Count Query)
         const { count, error: countError } = await _supabase
           .from(TABEL_NAME)
           .select('*', { count: 'exact', head: true });
@@ -622,12 +619,10 @@
           return;
         }
 
-        // 2. Siapkan batch fetch paralel
         const step = 1000;
         const totalBatches = Math.ceil(count / step);
         const fetchPromises = [];
 
-        // Hanya tarik kolom yang digunakan di aplikasi
         const selectedColumns = 'id, "Nama Siswa", "Nama Guru", "Nama Sekolah", "Kecamatan", "Kelas", "Jenis Kelamin", "Tanggal Asesmen", "Huruf", "Suku Kata", "Kata", "Paragraf", "Cerita Pendek", "Pertanyaan"';
 
         loadingText.textContent = `Memuat ${count} Data Asesmen...`;
@@ -644,7 +639,6 @@
           );
         }
 
-        // 3. Jalankan semua HTTP Request secara bersamaan (Paralel)
         const results = await Promise.all(fetchPromises);
 
         let allData = [];
@@ -653,13 +647,11 @@
           if (res.data) allData = allData.concat(res.data);
         }
 
-        // 4. Kalkulasi level capaian literasi
         rawData = allData.map(item => {
           item.capaianLiterasi = calculateHighestLevel(item);
           return item;
         });
 
-        // Simpan ke Cache Browser untuk mempercepat sesi navigasi
         try {
           sessionStorage.setItem('amka_literasi_cache', JSON.stringify(rawData));
         } catch (e) {
@@ -680,7 +672,6 @@
       }
     }
 
-    // Proses kalkulasi index level capaian membaca secara mandiri
     function calculateHighestLevel(row) {
       let highestPassed = "Huruf";
 
@@ -1073,173 +1064,158 @@
       document.head.appendChild(script1);
     }
 
-    function loadHtml2PdfScript(callback) {
-      if (window.html2pdf) {
-        callback();
-        return;
-      }
-      const script = document.createElement('script');
-      script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
-      script.onload = callback;
-      script.onerror = () => alert("Gagal memuat pustaka pembuat PDF Grafik.");
-      document.head.appendChild(script);
+    // --- EKSPOR GRAFIK KE PDF (LANDSCAPE & PERSENTASE KPI) ---
+    function exportChartsDirectPDF() {
+      if (filteredDataCache.length === 0) return alert("Tidak ada data grafik untuk diekspor.");
+      
+      loadJsPdfScripts(() => {
+        const btn = document.getElementById('btnExportChartsPDF');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = `<span>⏳ Menyiapkan PDF Landscape ...</span>`;
+
+        requestAnimationFrame(() => {
+          setTimeout(async () => {
+            try {
+              const { jsPDF } = window.jspdf;
+              // Orientasi Landscape (297mm x 210mm)
+              const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+              const pageWidth = doc.internal.pageSize.getWidth();   // 297 mm
+              const pageHeight = doc.internal.pageSize.getHeight(); // 210 mm
+
+              const valKecamatan = document.getElementById('filterKecamatan').value || "Semua Kecamatan";
+              const valSekolah = document.getElementById('filterSekolah').value || "Semua Sekolah";
+              const rawKelas = document.getElementById('filterKelas').value;
+              const valKelas = rawKelas ? "Kelas " + rawKelas.toString().replace(/^kelas\s+/i, '') : "Semua Kelas";
+              const filterSummaryText = getActiveFiltersSummary();
+
+              const totalSiswa = filteredDataCache.length;
+              const counts = { 'Huruf': 0, 'Suku Kata': 0, 'Kata': 0, 'Paragraf': 0, 'Cerita Pendek': 0, 'Pertanyaan': 0 };
+              filteredDataCache.forEach(item => { if (counts[item.capaianLiterasi] !== undefined) counts[item.capaianLiterasi]++; });
+
+              // Hitung persentase untuk KPI ekspor
+              const calcPct = (cnt) => totalSiswa > 0 ? Math.round((cnt / totalSiswa) * 100) + '%' : '0%';
+
+              const currentDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+              const tanggalAsesmenVal = filteredDataCache[0] ? (filteredDataCache[0]["Tanggal Asesmen"] || '-') : '-';
+
+              // 1. Kop Header PDF
+              doc.setFontSize(14);
+              doc.setFont("helvetica", "bold");
+              doc.setTextColor(15, 23, 42);
+              doc.text("LAPORAN CAPAIAN LITERASI SISWA", pageWidth / 2, 12, { align: "center" });
+
+              doc.setFontSize(9.5);
+              doc.setFont("helvetica", "bold");
+              doc.setTextColor(67, 56, 202);
+              doc.text(`Sekolah: ${valSekolah} | ${valKelas} | Kecamatan: ${valKecamatan}`, pageWidth / 2, 17, { align: "center" });
+
+              // Line Divider
+              doc.setLineWidth(0.5);
+              doc.setDrawColor(51, 65, 85);
+              doc.line(10, 20, pageWidth - 10, 20);
+
+              doc.setFontSize(8);
+              doc.setFont("helvetica", "normal");
+              doc.setTextColor(100, 116, 139);
+              doc.text(`Tanggal Unduh: ${currentDate} | Total: ${totalSiswa} Siswa`, 10, 24);
+              doc.text(`Tanggal Asesmen: ${tanggalAsesmenVal}`, pageWidth - 10, 24, { align: "right" });
+
+              // 2. Tabel Ringkasan KPI dengan Persentase
+              const summaryHeaders = [["TOTAL", "HURUF", "SUKU KATA", "KATA", "PARAGRAF", "CERITA PENDEK", "PERTANYAAN"]];
+              const summaryData = [
+                [
+                  `${totalSiswa} Siswa`,
+                  `${counts['Huruf']} (${calcPct(counts['Huruf'])})`,
+                  `${counts['Suku Kata']} (${calcPct(counts['Suku Kata'])})`,
+                  `${counts['Kata']} (${calcPct(counts['Kata'])})`,
+                  `${counts['Paragraf']} (${calcPct(counts['Paragraf'])})`,
+                  `${counts['Cerita Pendek']} (${calcPct(counts['Cerita Pendek'])})`,
+                  `${counts['Pertanyaan']} (${calcPct(counts['Pertanyaan'])})`
+                ]
+              ];
+
+              doc.autoTable({
+                startY: 27,
+                margin: { left: 10, right: 10 },
+                head: summaryHeaders,
+                body: summaryData,
+                theme: 'grid',
+                styles: { fontSize: 8.5, fontStyle: 'bold', halign: 'center', cellPadding: 2.5 },
+                headStyles: { fillColor: [248, 250, 252], textColor: [15, 23, 42] },
+                columnStyles: {
+                  0: { textColor: [15, 23, 42] },
+                  1: { textColor: [194, 65, 12], fillColor: [255, 247, 237] },
+                  2: { textColor: [161, 98, 7], fillColor: [254, 252, 232] },
+                  3: { textColor: [180, 83, 9], fillColor: [255, 251, 235] },
+                  4: { textColor: [4, 120, 87], fillColor: [236, 253, 245] },
+                  5: { textColor: [15, 118, 110], fillColor: [240, 253, 250] },
+                  6: { textColor: [29, 78, 216], fillColor: [239, 246, 255] }
+                }
+              });
+
+              let currentY = doc.lastAutoTable.finalY + 6;
+
+              // Helper Konversi Canvas Ke Image Solid Background
+              const getSolidBase64FromCanvas = (canvasId) => {
+                const originalCanvas = document.getElementById(canvasId);
+                if (!originalCanvas) return null;
+
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = originalCanvas.width;
+                tempCanvas.height = originalCanvas.height;
+                const ctx = tempCanvas.getContext('2d');
+
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                ctx.drawImage(originalCanvas, 0, 0);
+
+                return tempCanvas.toDataURL('image/jpeg', 0.95);
+              };
+
+              // 3. Layout Grafik Berdampingan (Side by Side Landscape)
+              const barBase64 = getSolidBase64FromCanvas('chartBarKecamatan');
+              const pieBase64 = getSolidBase64FromCanvas('chartProporsiMembaca');
+
+              doc.setFontSize(8.5);
+              doc.setFont("helvetica", "bold");
+              doc.setTextColor(67, 56, 202);
+              doc.text(`📌 Filter Data: ${filterSummaryText}`, 10, currentY);
+              currentY += 4;
+
+              const chartBoxWidth = (pageWidth - 25) / 2; // ~136mm
+              const chartBoxHeight = pageHeight - currentY - 12; // Menyesuaikan sisa tinggi ruang
+
+              if (barBase64) {
+                doc.addImage(barBase64, 'JPEG', 10, currentY, chartBoxWidth, chartBoxHeight);
+              }
+
+              if (pieBase64) {
+                doc.addImage(pieBase64, 'JPEG', 15 + chartBoxWidth, currentY, chartBoxWidth, chartBoxHeight);
+              }
+
+              // Footer
+              doc.setFontSize(7);
+              doc.setTextColor(148, 163, 184);
+              doc.text("Dashboard Capaian Literasi Siswa - Laporan Grafik Ekspor", pageWidth / 2, pageHeight - 4, { align: "center" });
+
+              // Simpan PDF
+              const fileNameStr = generatePDFFileName("Grafik_Literasi_Landscape");
+              doc.save(fileNameStr);
+
+            } catch (err) {
+              console.error(err);
+              alert("Gagal mengekspor PDF Grafik: " + err.message);
+            } finally {
+              btn.disabled = false;
+              btn.innerHTML = originalText;
+            }
+          }, 150);
+        });
+      });
     }
 
-// --- EKSPOR GRAFIK KE PDF (METODE DIRECT CANVAS TO JSPDF) ---
-function exportChartsDirectPDF() {
-  if (filteredDataCache.length === 0) return alert("Tidak ada data grafik untuk diekspor.");
-  
-  // Pastikan pustaka jsPDF dimuat
-  loadJsPdfScripts(() => {
-    const btn = document.getElementById('btnExportChartsPDF');
-    const originalText = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = `<span>⏳ Menyiapkan PDF ...</span>`;
-
-    setTimeout(async () => {
-      try {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-
-        const valKecamatan = document.getElementById('filterKecamatan').value || "Semua Kecamatan";
-        const valSekolah = document.getElementById('filterSekolah').value || "Semua Sekolah";
-        const rawKelas = document.getElementById('filterKelas').value;
-        const valKelas = rawKelas ? "Kelas " + rawKelas.toString().replace(/^kelas\s+/i, '') : "Semua Kelas";
-        const filterSummaryText = getActiveFiltersSummary();
-
-        const totalSiswa = filteredDataCache.length;
-        const counts = { 'Huruf': 0, 'Suku Kata': 0, 'Kata': 0, 'Paragraf': 0, 'Cerita Pendek': 0, 'Pertanyaan': 0 };
-        filteredDataCache.forEach(item => { if (counts[item.capaianLiterasi] !== undefined) counts[item.capaianLiterasi]++; });
-
-        const currentDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-        const tanggalAsesmenVal = filteredDataCache[0] ? (filteredDataCache[0]["Tanggal Asesmen"] || '-') : '-';
-
-        // 1. KOP HEADER PDF
-        doc.setFontSize(13);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(15, 23, 42);
-        doc.text("LAPORAN CAPAIAN LITERASI SISWA", doc.internal.pageSize.getWidth() / 2, 12, { align: "center" });
-
-        doc.setFontSize(9);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(67, 56, 202);
-        doc.text(`Sekolah: ${valSekolah} | ${valKelas} | Kecamatan: ${valKecamatan}`, doc.internal.pageSize.getWidth() / 2, 17, { align: "center" });
-
-        // Line Divider
-        doc.setLineWidth(0.5);
-        doc.setDrawColor(51, 65, 85);
-        doc.line(10, 20, doc.internal.pageSize.getWidth() - 10, 20);
-
-        doc.setFontSize(7.5);
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(100, 116, 139);
-        doc.text(`Tanggal Unduh: ${currentDate} | Total: ${totalSiswa} Siswa`, 10, 24);
-        doc.text(`Tanggal Asesmen: ${tanggalAsesmenVal}`, doc.internal.pageSize.getWidth() - 10, 24, { align: "right" });
-
-        // 2. TABEL RINGKASAN CAPAIAN (AutoTable)
-        const summaryHeaders = [["TOTAL", "HURUF", "SUKU KATA", "KATA", "PARAGRAF", "CERITA", "PERTANYAAN"]];
-        const summaryData = [[
-          totalSiswa,
-          counts['Huruf'],
-          counts['Suku Kata'],
-          counts['Kata'],
-          counts['Paragraf'],
-          counts['Cerita Pendek'],
-          counts['Pertanyaan']
-        ]];
-
-        doc.autoTable({
-          startY: 27,
-          margin: { left: 10, right: 10 },
-          head: summaryHeaders,
-          body: summaryData,
-          theme: 'grid',
-          styles: { fontSize: 8, fontStyle: 'bold', halign: 'center', cellPadding: 2.5 },
-          headStyles: { fillColor: [248, 250, 252], textColor: [15, 23, 42] },
-          columnStyles: {
-            0: { textColor: [15, 23, 42] },
-            1: { textColor: [194, 65, 12], fillColor: [255, 247, 237] },
-            2: { textColor: [161, 98, 7], fillColor: [254, 252, 232] },
-            3: { textColor: [180, 83, 9], fillColor: [255, 251, 235] },
-            4: { textColor: [4, 120, 87], fillColor: [236, 253, 245] },
-            5: { textColor: [15, 118, 110], fillColor: [240, 253, 250] },
-            6: { textColor: [29, 78, 216], fillColor: [239, 246, 255] }
-          }
-        });
-
-        let currentY = doc.lastAutoTable.finalY + 6;
-
-        // 3. FUNGSI PEMBANTU: KONVERSI CANVAS DENGAN BACKGROUND PUTIH PADAT
-        const getSolidBase64FromCanvas = (canvasId) => {
-          const originalCanvas = document.getElementById(canvasId);
-          if (!originalCanvas) return null;
-
-          // Buat canvas temp untuk menggambar background putih solid (mencegah gambar transparan)
-          const tempCanvas = document.createElement('canvas');
-          tempCanvas.width = originalCanvas.width;
-          tempCanvas.height = originalCanvas.height;
-          const ctx = tempCanvas.getContext('2d');
-
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-          ctx.drawImage(originalCanvas, 0, 0);
-
-          return tempCanvas.toDataURL('image/jpeg', 0.95);
-        };
-
-        // 4. EMBED GRAFIK BATANG KE PDF
-        const barBase64 = getSolidBase64FromCanvas('chartBarKecamatan');
-        if (barBase64) {
-          doc.setFontSize(8);
-          doc.setFont("helvetica", "bold");
-          doc.setTextColor(67, 56, 202);
-          doc.text(`📌 Filter Grafik Batang: ${filterSummaryText}`, 10, currentY);
-
-          // Render gambar canvas langsung ke dokumen PDF
-          const imgWidth = doc.internal.pageSize.getWidth() - 20; // Lebar 190mm
-          const imgHeight = 75; // Tinggi proporsional
-          
-          doc.addImage(barBase64, 'JPEG', 10, currentY + 2, imgWidth, imgHeight);
-          currentY += imgHeight + 10;
-        }
-
-        // 5. EMBED GRAFIK DONAT KE PDF
-        const pieBase64 = getSolidBase64FromCanvas('chartProporsiMembaca');
-        if (pieBase64) {
-          // Cek sisa halaman, jika tidak cukup buat halaman baru
-          if (currentY + 70 > doc.internal.pageSize.getHeight() - 10) {
-            doc.addPage();
-            currentY = 15;
-          }
-
-          doc.setFontSize(8);
-          doc.setFont("helvetica", "bold");
-          doc.setTextColor(15, 118, 110);
-          doc.text(`📌 Filter Proporsi Kemampuan: ${filterSummaryText}`, 10, currentY);
-
-          const pieWidth = 90; // Ukuran grafik donat dibuat lebih ringkas
-          const pieHeight = 70;
-          const posX = (doc.internal.pageSize.getWidth() - pieWidth) / 2; // Posisi tengah
-
-          doc.addImage(pieBase64, 'JPEG', posX, currentY + 2, pieWidth, pieHeight);
-        }
-
-        // 6. SIMPAN FILE PDF
-        const fileNameStr = generatePDFFileName("Grafik_Literasi");
-        doc.save(fileNameStr);
-
-      } catch (err) {
-        console.error(err);
-        alert("Gagal mengekspor PDF Grafik: " + err.message);
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-      }
-    }, 200);
-  });
-}
-
-    // --- EKSPOR TABEL RINCIAN KE PDF ---
+    // --- EKSPOR TABEL RINCIAN KE PDF (LANDSCAPE & LAPANG) ---
     function exportTableDirectPDF() {
       if (filteredDataCache.length === 0) return alert("Tidak ada data rincian siswa yang tampil untuk diekspor.");
 
@@ -1249,95 +1225,104 @@ function exportChartsDirectPDF() {
         btn.disabled = true;
         btn.innerHTML = `<span>⏳ Menyiapkan PDF (${filteredDataCache.length} Data)...</span>`;
 
-        setTimeout(() => {
-          try {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            try {
+              const { jsPDF } = window.jspdf;
+              // Orientasi Landscape (297mm x 210mm)
+              const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+              const pageWidth = doc.internal.pageSize.getWidth();
+              const pageHeight = doc.internal.pageSize.getHeight();
 
-            const valKecamatan = document.getElementById('filterKecamatan').value || "Semua Kecamatan";
-            const valSekolah = document.getElementById('filterSekolah').value || "Semua Sekolah";
-            const rawKelas = document.getElementById('filterKelas').value;
-            const valKelas = rawKelas ? "Kelas " + rawKelas.toString().replace(/^kelas\s+/i, '') : "Semua Kelas";
-            const currentDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-            const tanggalAsesmenVal = filteredDataCache[0] ? (filteredDataCache[0]["Tanggal Asesmen"] || '-') : '-';
+              const valKecamatan = document.getElementById('filterKecamatan').value || "Semua Kecamatan";
+              const valSekolah = document.getElementById('filterSekolah').value || "Semua Sekolah";
+              const rawKelas = document.getElementById('filterKelas').value;
+              const valKelas = rawKelas ? "Kelas " + rawKelas.toString().replace(/^kelas\s+/i, '') : "Semua Kelas";
+              const currentDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+              const tanggalAsesmenVal = filteredDataCache[0] ? (filteredDataCache[0]["Tanggal Asesmen"] || '-') : '-';
 
-            // Kop Header PDF
-            doc.setFontSize(11);
-            doc.setFont("helvetica", "bold");
-            doc.text("RINCIAN HASIL ASESMEN MEMBACA SISWA", doc.internal.pageSize.getWidth() / 2, 10, { align: "center" });
+              // Kop Header PDF
+              doc.setFontSize(13);
+              doc.setFont("helvetica", "bold");
+              doc.text("RINCIAN HASIL ASESMEN MEMBACA SISWA", pageWidth / 2, 10, { align: "center" });
 
-            doc.setFontSize(8);
-            doc.setFont("helvetica", "bold");
-            doc.setTextColor(67, 56, 202);
-            doc.text(`Sekolah: ${valSekolah} | ${valKelas} | Kecamatan: ${valKecamatan}`, doc.internal.pageSize.getWidth() / 2, 15, { align: "center" });
-            
-            doc.setFontSize(7);
-            doc.setFont("helvetica", "normal");
-            doc.setTextColor(85, 85, 85);
-            doc.text(`Tanggal Unduh: ${currentDate} | Total: ${filteredDataCache.length} Siswa`, 10, 20);
-            doc.text(`Tanggal Asesmen: ${tanggalAsesmenVal}`, doc.internal.pageSize.getWidth() - 10, 20, { align: "right" });
+              doc.setFontSize(9);
+              doc.setFont("helvetica", "bold");
+              doc.setTextColor(67, 56, 202);
+              doc.text(`Sekolah: ${valSekolah} | ${valKelas} | Kecamatan: ${valKecamatan}`, pageWidth / 2, 15, { align: "center" });
+              
+              doc.setFontSize(7.5);
+              doc.setFont("helvetica", "normal");
+              doc.setTextColor(85, 85, 85);
+              doc.text(`Tanggal Unduh: ${currentDate} | Total: ${filteredDataCache.length} Siswa`, 10, 20);
+              doc.text(`Tanggal Asesmen: ${tanggalAsesmenVal}`, pageWidth - 10, 20, { align: "right" });
 
-            // Header Tabel
-            const tableHeaders = [["No", "Nama Siswa", "Nama Guru", "Sekolah / Kelas", "Huruf", "Suku Kata", "Kata", "Paragraf", "Cerita", "Tanya"]];
-            
-            const tableBody = filteredDataCache.map((item, index) => {
-              const kStr = (item["Kelas"] || '-').toString().replace(/^kelas\s+/i, '');
-              return [
-                index + 1,
-                item["Nama Siswa"] || '-',
-                item["Nama Guru"] || '-',
-                `${item["Nama Sekolah"] || '-'}\n(Kelas ${kStr})`,
-                item["Huruf"] ?? '-',
-                item["Suku Kata"] ?? '-',
-                item["Kata"] ?? '-',
-                item["Paragraf"] ?? '-',
-                item["Cerita Pendek"] ?? '-',
-                item["Pertanyaan"] ?? '-'
-              ];
-            });
+              // Header Tabel Landscape
+              const tableHeaders = [["No", "Nama Siswa", "Jenis Kelamin", "Nama Guru", "Sekolah / Kelas", "Kecamatan", "Huruf", "Suku Kata", "Kata", "Paragraf", "Cerita", "Tanya"]];
+              
+              const tableBody = filteredDataCache.map((item, index) => {
+                const kStr = (item["Kelas"] || '-').toString().replace(/^kelas\s+/i, '');
+                return [
+                  index + 1,
+                  item["Nama Siswa"] || '-',
+                  item["Jenis Kelamin"] || '-',
+                  item["Nama Guru"] || '-',
+                  `${item["Nama Sekolah"] || '-'} (Kls ${kStr})`,
+                  item["Kecamatan"] || '-',
+                  item["Huruf"] ?? '-',
+                  item["Suku Kata"] ?? '-',
+                  item["Kata"] ?? '-',
+                  item["Paragraf"] ?? '-',
+                  item["Cerita Pendek"] ?? '-',
+                  item["Pertanyaan"] ?? '-'
+                ];
+              });
 
-            doc.autoTable({
-              startY: 23,
-              margin: { left: 10, right: 10 },
-              head: tableHeaders,
-              body: tableBody,
-              theme: 'grid',
-              styles: { fontSize: 6.5, cellPadding: 1.5, overflow: 'linebreak' },
-              headStyles: { fillColor: [241, 245, 249], textColor: [51, 65, 85], fontStyle: 'bold', halign: 'center' },
-              columnStyles: {
-                0: { halign: 'center', cellWidth: 7 },   // No
-                1: { cellWidth: 32 },                   // Nama Siswa
-                2: { cellWidth: 30 },                   // Nama Guru
-                3: { cellWidth: 38 },                   // Sekolah / Kelas
-                4: { halign: 'center', cellWidth: 14 },  // Huruf
-                5: { halign: 'center', cellWidth: 14 },  // Suku Kata
-                6: { halign: 'center', cellWidth: 13 },  // Kata
-                7: { halign: 'center', cellWidth: 14 },  // Paragraf
-                8: { halign: 'center', cellWidth: 14 },  // Cerita
-                9: { halign: 'center', cellWidth: 14 }   // Tanya
-              },
-              didDrawPage: (data) => {
-                const pageCount = doc.internal.getNumberOfPages();
-                doc.setFontSize(6.5);
-                doc.setTextColor(128, 128, 128);
-                doc.text(
-                  `Dashboard Literasi Asesmen Siswa | Halaman ${data.pageNumber} dari ${pageCount}`,
-                  10,
-                  doc.internal.pageSize.getHeight() - 6
-                );
-              }
-            });
+              doc.autoTable({
+                startY: 23,
+                margin: { left: 10, right: 10 },
+                head: tableHeaders,
+                body: tableBody,
+                theme: 'grid',
+                styles: { fontSize: 7.5, cellPadding: 2, overflow: 'linebreak' },
+                headStyles: { fillColor: [241, 245, 249], textColor: [51, 65, 85], fontStyle: 'bold', halign: 'center' },
+                columnStyles: {
+                  0: { halign: 'center', cellWidth: 10 },  // No
+                  1: { cellWidth: 45 },                   // Nama Siswa
+                  2: { halign: 'center', cellWidth: 20 },  // JK
+                  3: { cellWidth: 40 },                   // Nama Guru
+                  4: { cellWidth: 50 },                   // Sekolah / Kelas
+                  5: { cellWidth: 32 },                   // Kecamatan
+                  6: { halign: 'center', cellWidth: 13 },  // Huruf
+                  7: { halign: 'center', cellWidth: 14 },  // Suku Kata
+                  8: { halign: 'center', cellWidth: 13 },  // Kata
+                  9: { halign: 'center', cellWidth: 13 },  // Paragraf
+                  10: { halign: 'center', cellWidth: 13 }, // Cerita
+                  11: { halign: 'center', cellWidth: 14 }  // Tanya
+                },
+                didDrawPage: (data) => {
+                  const pageCount = doc.internal.getNumberOfPages();
+                  doc.setFontSize(7);
+                  doc.setTextColor(128, 128, 128);
+                  doc.text(
+                    `Dashboard Literasi Asesmen Siswa | Halaman ${data.pageNumber} dari ${pageCount}`,
+                    10,
+                    pageHeight - 6
+                  );
+                }
+              });
 
-            const fileNameStr = generatePDFFileName("Rincian_Asesmen");
-            doc.save(fileNameStr);
+              const fileNameStr = generatePDFFileName("Rincian_Asesmen_Landscape");
+              doc.save(fileNameStr);
 
-          } catch (err) {
-            alert("Gagal mengekspor PDF Rincian: " + err.message);
-          } finally {
-            btn.disabled = false;
-            btn.innerHTML = originalText;
-          }
-        }, 100);
+            } catch (err) {
+              alert("Gagal mengekspor PDF Rincian: " + err.message);
+            } finally {
+              btn.disabled = false;
+              btn.innerHTML = originalText;
+            }
+          }, 100);
+        });
       });
     }
   </script>
