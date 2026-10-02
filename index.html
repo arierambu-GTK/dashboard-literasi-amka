@@ -1085,119 +1085,145 @@
       document.head.appendChild(script);
     }
 
-    // --- EKSPOR GRAFIK KE PDF ---
-    function exportChartsDirectPDF() {
-      if (filteredDataCache.length === 0) return alert("Tidak ada data grafik untuk diekspor.");
-      
-      loadHtml2PdfScript(() => {
-        const btn = document.getElementById('btnExportChartsPDF');
-        const originalText = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = `<span>⏳ Menyiapkan PDF ...</span>`;
+    // --- EKSPOR GRAFIK KE PDF (VERSI PERBAIKAN) ---
+  function exportChartsDirectPDF() {
+  if (filteredDataCache.length === 0) return alert("Tidak ada data grafik untuk diekspor.");
+  
+  loadHtml2PdfScript(() => {
+    const btn = document.getElementById('btnExportChartsPDF');
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<span>⏳ Menyiapkan PDF ...</span>`;
 
-        setTimeout(() => {
-          try {
-            const valKecamatan = document.getElementById('filterKecamatan').value || "Semua Kecamatan";
-            const valSekolah = document.getElementById('filterSekolah').value || "Semua Sekolah";
-            const rawKelas = document.getElementById('filterKelas').value;
-            const valKelas = rawKelas ? "Kelas " + rawKelas.toString().replace(/^kelas\s+/i, '') : "Semua Kelas";
-            const filterSummaryText = getActiveFiltersSummary();
+    // Beri jeda agar UI tombol mengupdate state terlebih dahulu
+    setTimeout(async () => {
+      let tempContainer = null;
+      try {
+        const valKecamatan = document.getElementById('filterKecamatan').value || "Semua Kecamatan";
+        const valSekolah = document.getElementById('filterSekolah').value || "Semua Sekolah";
+        const rawKelas = document.getElementById('filterKelas').value;
+        const valKelas = rawKelas ? "Kelas " + rawKelas.toString().replace(/^kelas\s+/i, '') : "Semua Kelas";
+        const filterSummaryText = getActiveFiltersSummary();
 
-            const totalSiswa = filteredDataCache.length;
-            const counts = { 'Huruf': 0, 'Suku Kata': 0, 'Kata': 0, 'Paragraf': 0, 'Cerita Pendek': 0, 'Pertanyaan': 0 };
-            filteredDataCache.forEach(item => { if (counts[item.capaianLiterasi] !== undefined) counts[item.capaianLiterasi]++; });
+        const totalSiswa = filteredDataCache.length;
+        const counts = { 'Huruf': 0, 'Suku Kata': 0, 'Kata': 0, 'Paragraf': 0, 'Cerita Pendek': 0, 'Pertanyaan': 0 };
+        filteredDataCache.forEach(item => { if (counts[item.capaianLiterasi] !== undefined) counts[item.capaianLiterasi]++; });
 
-            const currentDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-            const tanggalAsesmenVal = filteredDataCache[0] ? (filteredDataCache[0]["Tanggal Asesmen"] || '-') : '-';
+        const currentDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+        const tanggalAsesmenVal = filteredDataCache[0] ? (filteredDataCache[0]["Tanggal Asesmen"] || '-') : '-';
+        
+        const barImgBase64 = chartBarKecamatanInstance ? chartBarKecamatanInstance.toBase64Image('image/jpeg', 0.95) : '';
+        const pieImgBase64 = chartProporsiMembacaInstance ? chartProporsiMembacaInstance.toBase64Image('image/jpeg', 0.95) : '';
+
+        // 1. Buat Container Sementara yang Dipasang Langsung ke Body (Luar Viewport)
+        tempContainer = document.createElement('div');
+        tempContainer.style.position = 'absolute';
+        tempContainer.style.left = '-9999px';
+        tempContainer.style.top = '0';
+        tempContainer.style.width = '794px'; // Lebar A4 standar pada 96 DPI (210mm)
+        tempContainer.style.backgroundColor = '#ffffff';
+
+        tempContainer.innerHTML = `
+          <div style="width: 100%; padding: 20px; font-family: Arial, sans-serif; color: #1e293b; background: #ffffff; box-sizing: border-box;">
             
-            const barImgBase64 = chartBarKecamatanInstance ? chartBarKecamatanInstance.toBase64Image('image/jpeg', 0.85) : '';
-            const pieImgBase64 = chartProporsiMembacaInstance ? chartProporsiMembacaInstance.toBase64Image('image/jpeg', 0.85) : '';
+            <!-- Kop / Header -->
+            <div style="text-align: center; margin-bottom: 12px; border-bottom: 2px solid #334155; padding-bottom: 8px;">
+              <h2 style="margin: 0; font-size: 16px; font-weight: bold; text-transform: uppercase; color: #0f172a;">Laporan Capaian Literasi Siswa</h2>
+              <p style="margin: 4px 0 0 0; font-size: 11px; font-weight: bold; color: #4338ca;">
+                Sekolah: ${valSekolah} | ${valKelas} | Kecamatan: ${valKecamatan}
+              </p>
+            </div>
 
-            let htmlContent = `
-              <div style="width: 190mm; padding: 4mm; font-family: Arial, sans-serif; color: #1e293b; background: #ffffff; box-sizing: border-box;">
-                
-                <!-- Kop / Header -->
-                <div style="text-align: center; margin-bottom: 8px; border-bottom: 2px solid #334155; padding-bottom: 6px;">
-                  <h2 style="margin: 0; font-size: 14px; font-weight: bold; text-transform: uppercase; color: #0f172a;">Laporan Capaian Literasi Siswa</h2>
-                  <p style="margin: 3px 0 0 0; font-size: 10px; font-weight: bold; color: #4338ca;">
-                    Sekolah: ${valSekolah} | ${valKelas} | Kecamatan: ${valKecamatan}
-                  </p>
-                </div>
+            <!-- Info Meta -->
+            <table style="width: 100%; font-size: 9px; color: #64748b; margin-bottom: 12px;">
+              <tr>
+                <td style="text-align: left; padding: 0;">Tanggal Unduh: ${currentDate} | Total: ${totalSiswa} Siswa</td>
+                <td style="text-align: right; padding: 0; font-weight: bold; color: #334155;">Tanggal Asesmen: ${tanggalAsesmenVal}</td>
+              </tr>
+            </table>
+            
+            <!-- Ringkasan Angka -->
+            <div style="margin-bottom: 16px; page-break-inside: avoid;">
+              <h3 style="font-size: 11px; font-weight: bold; margin: 0 0 6px 0; color: #0f172a;">📊 Ringkasan Capaian Siswa</h3>
+              <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 9px; background: #ffffff;">
+                <tr style="background-color: #f8fafc;">
+                  <td style="border: 1px solid #cbd5e1; padding: 6px; width: 14%;"><div style="color: #475569; font-size: 8px; font-weight: bold;">TOTAL</div><div style="font-size: 12px; font-weight: bold; color: #0f172a; margin-top:2px;">${totalSiswa}</div></td>
+                  <td style="border: 1px solid #fed7aa; padding: 6px; width: 14%; background-color: #fff7ed;"><div style="color: #c2410c; font-size: 8px; font-weight: bold;">HURUF</div><div style="font-size: 12px; font-weight: bold; color: #c2410c; margin-top:2px;">${counts['Huruf']}</div></td>
+                  <td style="border: 1px solid #fef08a; padding: 6px; width: 14%; background-color: #fefce8;"><div style="color: #a16207; font-size: 8px; font-weight: bold;">SUKU KATA</div><div style="font-size: 12px; font-weight: bold; color: #a16207; margin-top:2px;">${counts['Suku Kata']}</div></td>
+                  <td style="border: 1px solid #fde68a; padding: 6px; width: 14%; background-color: #fffbeb;"><div style="color: #b45309; font-size: 8px; font-weight: bold;">KATA</div><div style="font-size: 12px; font-weight: bold; color: #b45309; margin-top:2px;">${counts['Kata']}</div></td>
+                  <td style="border: 1px solid #a7f3d0; padding: 6px; width: 14%; background-color: #ecfdf5;"><div style="color: #047857; font-size: 8px; font-weight: bold;">PARAGRAF</div><div style="font-size: 12px; font-weight: bold; color: #047857; margin-top:2px;">${counts['Paragraf']}</div></td>
+                  <td style="border: 1px solid #99f6e4; padding: 6px; width: 14%; background-color: #f0fdfa;"><div style="color: #0f766e; font-size: 8px; font-weight: bold;">CERITA</div><div style="font-size: 12px; font-weight: bold; color: #0f766e; margin-top:2px;">${counts['Cerita Pendek']}</div></td>
+                  <td style="border: 1px solid #bfdbfe; padding: 6px; width: 14%; background-color: #eff6ff;"><div style="color: #1d4ed8; font-size: 8px; font-weight: bold;">PERTANYAAN</div><div style="font-size: 12px; font-weight: bold; color: #1d4ed8; margin-top:2px;">${counts['Pertanyaan']}</div></td>
+                </tr>
+              </table>
+            </div>
 
-                <!-- Info Meta -->
-                <table style="width: 100%; font-size: 8px; color: #64748b; margin-bottom: 10px;">
-                  <tr>
-                    <td style="text-align: left; padding: 0;">Tanggal Unduh: ${currentDate} | Total: ${totalSiswa} Siswa</td>
-                    <td style="text-align: right; padding: 0; font-weight: bold; color: #334155;">Tanggal Asesmen: ${tanggalAsesmenVal}</td>
-                  </tr>
-                </table>
-                
-                <!-- Ringkasan Angka -->
-                <div style="margin-bottom: 12px; page-break-inside: avoid;">
-                  <h3 style="font-size: 10px; font-weight: bold; margin: 0 0 5px 0; color: #0f172a;">📊 Ringkasan Capaian Siswa</h3>
-                  <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 8px; background: #ffffff;">
-                    <tr style="background-color: #f8fafc;">
-                      <td style="border: 1px solid #cbd5e1; padding: 4px; width: 14%;"><div style="color: #475569; font-size: 7px; font-weight: bold;">TOTAL</div><div style="font-size: 11px; font-weight: bold; color: #0f172a; margin-top:1px;">${totalSiswa}</div></td>
-                      <td style="border: 1px solid #fed7aa; padding: 4px; width: 14%; background-color: #fff7ed;"><div style="color: #c2410c; font-size: 7px; font-weight: bold;">HURUF</div><div style="font-size: 11px; font-weight: bold; color: #c2410c; margin-top:1px;">${counts['Huruf']}</div></td>
-                      <td style="border: 1px solid #fef08a; padding: 4px; width: 14%; background-color: #fefce8;"><div style="color: #a16207; font-size: 7px; font-weight: bold;">SUKU KATA</div><div style="font-size: 11px; font-weight: bold; color: #a16207; margin-top:1px;">${counts['Suku Kata']}</div></td>
-                      <td style="border: 1px solid #fde68a; padding: 4px; width: 14%; background-color: #fffbeb;"><div style="color: #b45309; font-size: 7px; font-weight: bold;">KATA</div><div style="font-size: 11px; font-weight: bold; color: #b45309; margin-top:1px;">${counts['Kata']}</div></td>
-                      <td style="border: 1px solid #a7f3d0; padding: 4px; width: 14%; background-color: #ecfdf5;"><div style="color: #047857; font-size: 7px; font-weight: bold;">PARAGRAF</div><div style="font-size: 11px; font-weight: bold; color: #047857; margin-top:1px;">${counts['Paragraf']}</div></td>
-                      <td style="border: 1px solid #99f6e4; padding: 4px; width: 14%; background-color: #f0fdfa;"><div style="color: #0f766e; font-size: 7px; font-weight: bold;">CERITA</div><div style="font-size: 11px; font-weight: bold; color: #0f766e; margin-top:1px;">${counts['Cerita Pendek']}</div></td>
-                      <td style="border: 1px solid #bfdbfe; padding: 4px; width: 14%; background-color: #eff6ff;"><div style="color: #1d4ed8; font-size: 7px; font-weight: bold;">PERTANYAAN</div><div style="font-size: 11px; font-weight: bold; color: #1d4ed8; margin-top:1px;">${counts['Pertanyaan']}</div></td>
-                    </tr>
-                  </table>
-                </div>
+            <!-- Area Grafik Vertikal -->
+            <div style="display: flex; flex-direction: column; gap: 16px; background: #ffffff;">
+              
+              <!-- Grafik Batang -->
+              ${barImgBase64 ? `
+                <div style="border: 1px solid #e2e8f0; padding: 8px; border-radius: 8px; text-align: center; background: #ffffff; page-break-inside: avoid;">
+                  <div style="font-size: 9px; font-weight: bold; color: #4338ca; margin-bottom: 6px; background: #e0e7ff; padding: 4px; border-radius: 4px;">
+                    📌 Filter Grafik Batang: ${filterSummaryText}
+                  </div>
+                  <img src="${barImgBase64}" style="width: 100%; max-height: 240px; object-fit: contain; display: block; margin: 0 auto; background: #ffffff;" />
+                </div>` : ''}
 
-                <!-- Area Grafik Vertikal -->
-                <div style="display: flex; flex-direction: column; gap: 12px; background: #ffffff;">
-                  
-                  <!-- Grafik Batang -->
-                  ${barImgBase64 ? `
-                    <div style="border: 1px solid #e2e8f0; padding: 6px; border-radius: 8px; text-align: center; background: #ffffff; page-break-inside: avoid;">
-                      <div style="font-size: 8px; font-weight: bold; color: #4338ca; margin-bottom: 4px; background: #e0e7ff; padding: 3px; border-radius: 4px;">
-                        📌 Filter Grafik Batang: ${filterSummaryText}
-                      </div>
-                      <img src="${barImgBase64}" style="width: 100%; max-height: 200px; object-fit: contain; display: block; margin: 0 auto; background: #ffffff;" />
-                    </div>` : ''}
+              <!-- Grafik Donat -->
+              ${pieImgBase64 ? `
+                <div style="border: 1px solid #e2e8f0; padding: 8px; border-radius: 8px; text-align: center; background: #ffffff; page-break-inside: avoid;">
+                  <div style="font-size: 9px; font-weight: bold; color: #0f766e; margin-bottom: 6px; background: #ccfbf1; padding: 4px; border-radius: 4px;">
+                    📌 Filter Proporsi Kemampuan: ${filterSummaryText}
+                  </div>
+                  <div style="width: 100%; max-width: 260px; margin: 0 auto; background: #ffffff;">
+                    <img src="${pieImgBase64}" style="width: 100%; height: auto; object-fit: contain; display: block; margin: 0 auto; background: #ffffff;" />
+                  </div>
+                </div>` : ''}
 
-                  <!-- Grafik Donat -->
-                  ${pieImgBase64 ? `
-                    <div style="border: 1px solid #e2e8f0; padding: 6px; border-radius: 8px; text-align: center; background: #ffffff; page-break-inside: avoid;">
-                      <div style="font-size: 8px; font-weight: bold; color: #0f766e; margin-bottom: 4px; background: #ccfbf1; padding: 3px; border-radius: 4px;">
-                        📌 Filter Proporsi Kemampuan: ${filterSummaryText}
-                      </div>
-                      <div style="width: 100%; max-width: 220px; margin: 0 auto; background: #ffffff;">
-                        <img src="${pieImgBase64}" style="width: 100%; height: auto; object-fit: contain; display: block; margin: 0 auto; background: #ffffff;" />
-                      </div>
-                    </div>` : ''}
+            </div>
 
-                </div>
+          </div>
+        `;
 
-              </div>
-            `;
+        document.body.appendChild(tempContainer);
 
-            const fileNameStr = generatePDFFileName("Grafik_Literasi");
-            const opt = { 
-              margin: [8, 8, 8, 8], 
-              filename: fileNameStr, 
-              image: { type: 'jpeg', quality: 0.85 }, 
-              html2canvas: { scale: 1.5, useCORS: true, logging: false }, 
-              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
-            };
+        // 2. Beri Waktu Browser untuk Menyiapkan Gambar Base64 di DOM
+        await new Promise(resolve => setTimeout(resolve, 300));
 
-            html2pdf().from(htmlContent).set(opt).save().then(() => { 
-              btn.disabled = false; 
-              btn.innerHTML = originalText; 
-            });
+        const fileNameStr = generatePDFFileName("Grafik_Literasi");
+        
+        // 3. Konfigurasi html2canvas Memaksa Scroll ke Posisi (0, 0)
+        const opt = { 
+          margin: [8, 8, 8, 8], 
+          filename: fileNameStr, 
+          image: { type: 'jpeg', quality: 0.98 }, 
+          html2canvas: { 
+            scale: 2, // Kualitas cetak jernih
+            useCORS: true, 
+            logging: false,
+            scrollY: 0, // Mengunci koordinat Y agar tidak terpengaruh scroll pengguna
+            scrollX: 0, // Mengunci koordinat X
+            windowWidth: 794
+          }, 
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
+        };
 
-          } catch (err) {
-            alert("Gagal mengekspor PDF Grafik: " + err.message);
-            btn.disabled = false;
-            btn.innerHTML = originalText;
-          }
-        }, 300);
-      });
-    }
+        await html2pdf().from(tempContainer).set(opt).save();
+
+      } catch (err) {
+        alert("Gagal mengekspor PDF Grafik: " + err.message);
+      } finally {
+        // Hapus elemen sementara dari DOM setelah selesai
+        if (tempContainer && tempContainer.parentNode) {
+          tempContainer.parentNode.removeChild(tempContainer);
+        }
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+    }, 150);
+  });
+}
 
     // --- EKSPOR TABEL RINCIAN KE PDF ---
     function exportTableDirectPDF() {
