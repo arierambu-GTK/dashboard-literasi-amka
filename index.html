@@ -235,7 +235,7 @@
               <p class="text-[11px] text-slate-500">Perbandingan jenjang membaca siswa</p>
             </div>
             <button onclick="exportChartsDirectPDF()" id="btnExportChartsPDF" class="w-full sm:w-auto bg-indigo-600 active:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-md shadow-indigo-500/20 flex items-center justify-center gap-2">
-              <span>📊</span> Ekspor PDF Grafik (Landscape)
+              <span>📊</span> Ekspor PDF Grafik
             </button>
           </div>
 
@@ -286,7 +286,7 @@
             <div class="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
               <input type="text" id="searchInput" placeholder="Cari nama, sekolah, kecamatan..." class="bg-slate-50 border border-slate-300 text-xs rounded-xl p-2.5 w-full sm:w-64 focus:ring-2 focus:ring-indigo-500 outline-none">
               <button onclick="exportTableDirectPDF()" id="btnExportTablePDF" class="w-full sm:w-auto bg-emerald-600 active:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 whitespace-nowrap">
-                <span>📄</span> Ekspor Rincian PDF (Landscape)
+                <span>📄</span> Ekspor Rincian PDF
               </button>
             </div>
           </div>
@@ -1064,7 +1064,33 @@
       document.head.appendChild(script1);
     }
 
-    // --- EKSPOR GRAFIK KE PDF (LANDSCAPE & PERSENTASE KPI) ---
+    // --- FUNGSI MENGAMBIL GAMBAR CANVAS HIGH RESOLUTION (ANTI KABUR) ---
+    function getHighResImageFromCanvas(canvasId, scale = 3) {
+      const originalCanvas = document.getElementById(canvasId);
+      if (!originalCanvas) return null;
+
+      // Buat canvas resolusi tinggi dengan faktor skala (Retina scaling)
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = originalCanvas.width * scale;
+      tempCanvas.height = originalCanvas.height * scale;
+      
+      const ctx = tempCanvas.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      // Latar belakang putih padat
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+      // Gambar ulang dari canvas asli dengan skala resolusi tinggi
+      ctx.scale(scale, scale);
+      ctx.drawImage(originalCanvas, 0, 0);
+
+      // Konversi ke image JPEG dengan kualitas 100% (1.0)
+      return tempCanvas.toDataURL('image/jpeg', 1.0);
+    }
+
+    // --- EKSPOR GRAFIK KE PDF ---
     function exportChartsDirectPDF() {
       if (filteredDataCache.length === 0) return alert("Tidak ada data grafik untuk diekspor.");
       
@@ -1072,13 +1098,12 @@
         const btn = document.getElementById('btnExportChartsPDF');
         const originalText = btn.innerHTML;
         btn.disabled = true;
-        btn.innerHTML = `<span>⏳ Menyiapkan PDF Landscape ...</span>`;
+        btn.innerHTML = `<span>⏳ Menyiapkan PDF Resolusi Tinggi ...</span>`;
 
         requestAnimationFrame(() => {
           setTimeout(async () => {
             try {
               const { jsPDF } = window.jspdf;
-              // Orientasi Landscape (297mm x 210mm)
               const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
               const pageWidth = doc.internal.pageSize.getWidth();   // 297 mm
               const pageHeight = doc.internal.pageSize.getHeight(); // 210 mm
@@ -1156,26 +1181,9 @@
 
               let currentY = doc.lastAutoTable.finalY + 6;
 
-              // Helper Konversi Canvas Ke Image Solid Background
-              const getSolidBase64FromCanvas = (canvasId) => {
-                const originalCanvas = document.getElementById(canvasId);
-                if (!originalCanvas) return null;
-
-                const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = originalCanvas.width;
-                tempCanvas.height = originalCanvas.height;
-                const ctx = tempCanvas.getContext('2d');
-
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-                ctx.drawImage(originalCanvas, 0, 0);
-
-                return tempCanvas.toDataURL('image/jpeg', 0.95);
-              };
-
-              // 3. Layout Grafik Berdampingan (Side by Side Landscape)
-              const barBase64 = getSolidBase64FromCanvas('chartBarKecamatan');
-              const pieBase64 = getSolidBase64FromCanvas('chartProporsiMembaca');
+              // 3. Tangkap Gambar Resolusi Tinggi (3x Super Sampling)
+              const barBase64 = getHighResImageFromCanvas('chartBarKecamatan', 3);
+              const pieBase64 = getHighResImageFromCanvas('chartProporsiMembaca', 3);
 
               doc.setFontSize(8.5);
               doc.setFont("helvetica", "bold");
@@ -1184,14 +1192,15 @@
               currentY += 4;
 
               const chartBoxWidth = (pageWidth - 25) / 2; // ~136mm
-              const chartBoxHeight = pageHeight - currentY - 12; // Menyesuaikan sisa tinggi ruang
+              const chartBoxHeight = pageHeight - currentY - 12;
 
+              // Sisipkan gambar dengan enkripsi compression FAST / NONE agar ketajaman maksimal
               if (barBase64) {
-                doc.addImage(barBase64, 'JPEG', 10, currentY, chartBoxWidth, chartBoxHeight);
+                doc.addImage(barBase64, 'JPEG', 10, currentY, chartBoxWidth, chartBoxHeight, undefined, 'FAST');
               }
 
               if (pieBase64) {
-                doc.addImage(pieBase64, 'JPEG', 15 + chartBoxWidth, currentY, chartBoxWidth, chartBoxHeight);
+                doc.addImage(pieBase64, 'JPEG', 15 + chartBoxWidth, currentY, chartBoxWidth, chartBoxHeight, undefined, 'FAST');
               }
 
               // Footer
@@ -1199,8 +1208,8 @@
               doc.setTextColor(148, 163, 184);
               doc.text("Dashboard Capaian Literasi Siswa - Laporan Grafik Ekspor", pageWidth / 2, pageHeight - 4, { align: "center" });
 
-              // Simpan PDF
-              const fileNameStr = generatePDFFileName("Grafik_Literasi_Landscape");
+              // Simpan PDF (Nama file bersih tanpa tulisan 'landscape')
+              const fileNameStr = generatePDFFileName("Grafik_Literasi");
               doc.save(fileNameStr);
 
             } catch (err) {
@@ -1215,7 +1224,7 @@
       });
     }
 
-    // --- EKSPOR TABEL RINCIAN KE PDF (LANDSCAPE & LAPANG) ---
+    // --- EKSPOR TABEL RINCIAN KE PDF ---
     function exportTableDirectPDF() {
       if (filteredDataCache.length === 0) return alert("Tidak ada data rincian siswa yang tampil untuk diekspor.");
 
@@ -1229,7 +1238,6 @@
           setTimeout(() => {
             try {
               const { jsPDF } = window.jspdf;
-              // Orientasi Landscape (297mm x 210mm)
               const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
               const pageWidth = doc.internal.pageSize.getWidth();
               const pageHeight = doc.internal.pageSize.getHeight();
@@ -1257,7 +1265,7 @@
               doc.text(`Tanggal Unduh: ${currentDate} | Total: ${filteredDataCache.length} Siswa`, 10, 20);
               doc.text(`Tanggal Asesmen: ${tanggalAsesmenVal}`, pageWidth - 10, 20, { align: "right" });
 
-              // Header Tabel Landscape
+              // Header Tabel
               const tableHeaders = [["No", "Nama Siswa", "Jenis Kelamin", "Nama Guru", "Sekolah / Kelas", "Kecamatan", "Huruf", "Suku Kata", "Kata", "Paragraf", "Cerita", "Tanya"]];
               
               const tableBody = filteredDataCache.map((item, index) => {
@@ -1312,7 +1320,8 @@
                 }
               });
 
-              const fileNameStr = generatePDFFileName("Rincian_Asesmen_Landscape");
+              // Simpan PDF (Nama file bersih tanpa tulisan 'landscape')
+              const fileNameStr = generatePDFFileName("Rincian_Asesmen");
               doc.save(fileNameStr);
 
             } catch (err) {
