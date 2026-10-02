@@ -1181,34 +1181,85 @@
 
               let currentY = doc.lastAutoTable.finalY + 6;
 
+              // Judul Grafik Dinamis Sesuai Filter yang Aktif
+              let titleBar = "📊 Capaian Per Kecamatan";
+              if (valSekolah !== "Semua Sekolah") {
+                titleBar = `📊 Capaian Per Kelas (${valSekolah})`;
+              } else if (valKecamatan !== "Semua Kecamatan") {
+                titleBar = `📊 Capaian Per Sekolah (Kec. ${valKecamatan})`;
+              }
+
               // 3. Tangkap Gambar Resolusi Tinggi (3x Super Sampling)
               const barBase64 = getHighResImageFromCanvas('chartBarKecamatan', 3);
               const pieBase64 = getHighResImageFromCanvas('chartProporsiMembaca', 3);
 
+              // Tampilkan Judul & Info Filter
               doc.setFontSize(8.5);
               doc.setFont("helvetica", "bold");
               doc.setTextColor(67, 56, 202);
-              doc.text(` Data: ${filterSummaryText}`, 10, currentY);
-              currentY += 4;
+              doc.text(`Data: ${filterSummaryText}`, 10, currentY);
+              currentY += 5;
 
-              const chartBoxWidth = (pageWidth - 25) / 2; // ~136mm
-              const chartBoxHeight = pageHeight - currentY - 12;
+              // Pengaturan Proporsi Area Grafik
+              const leftColX = 10;
+              const rightColX = 150;
+              const colWidth = 137; // mm
+              const chartHeight = 110; // mm
 
-              // Sisipkan gambar dengan enkripsi compression FAST / NONE agar ketajaman maksimal
+              // --- KOLOM KIRI: GRAFIK BATANG ---
+              doc.setFontSize(10);
+              doc.setFont("helvetica", "bold");
+              doc.setTextColor(15, 23, 42);
+              doc.text(titleBar, leftColX, currentY);
+
               if (barBase64) {
-                doc.addImage(barBase64, 'JPEG', 10, currentY, chartBoxWidth, chartBoxHeight, undefined, 'FAST');
+                doc.addImage(barBase64, 'JPEG', leftColX, currentY + 3, colWidth, chartHeight, undefined, 'FAST');
               }
+
+              // --- KOLOM KANAN: DIAGRAM DONAT & LEGEND DENGAN NILAI ---
+              doc.setFontSize(10);
+              doc.setFont("helvetica", "bold");
+              doc.setTextColor(15, 23, 42);
+              doc.text("🍰 Proporsi & Detail Capaian Membaca", rightColX, currentY);
+
+              // Render Gambar Donat dengan Proporsi Pas (Bentuk Bujur Sangkar Ringkas)
+              const pieSize = 72; // mm
+              const pieX = rightColX + (colWidth - pieSize) / 2; // Posisi Tengah Kolom Kanan
 
               if (pieBase64) {
-                doc.addImage(pieBase64, 'JPEG', 15 + chartBoxWidth, currentY, chartBoxWidth, chartBoxHeight, undefined, 'FAST');
+                doc.addImage(pieBase64, 'JPEG', pieX, currentY + 3, pieSize, pieSize, undefined, 'FAST');
               }
+
+              // Tabel Rincian/Legenda Nilai & Persentase Donat di Bawah Gambar Donat
+              const donutTableHeaders = [["Level", "Jumlah", "Persentase"]];
+              const donutTableBody = Object.keys(counts).map(cat => [
+                cat,
+                `${counts[cat]} Siswa`,
+                calcPct(counts[cat])
+              ]);
+
+              doc.autoTable({
+                startY: currentY + pieSize + 5,
+                margin: { left: rightColX, right: 10 },
+                head: donutTableHeaders,
+                body: donutTableBody,
+                theme: 'striped',
+                tableWidth: colWidth,
+                styles: { fontSize: 7, cellPadding: 1.2, halign: 'center' },
+                headStyles: { fillColor: [79, 70, 229], textColor: [255, 255, 255], fontStyle: 'bold' },
+                columnStyles: {
+                  0: { halign: 'left', fontStyle: 'bold' },
+                  1: { halign: 'center' },
+                  2: { halign: 'center', fontStyle: 'bold', textColor: [67, 56, 202] }
+                }
+              });
 
               // Footer
               doc.setFontSize(7);
               doc.setTextColor(148, 163, 184);
               doc.text("Dashboard Capaian Literasi Siswa - Laporan Grafik Ekspor", pageWidth / 2, pageHeight - 4, { align: "center" });
 
-              // Simpan PDF (Nama file bersih tanpa tulisan 'landscape')
+              // Simpan PDF
               const fileNameStr = generatePDFFileName("Grafik_Literasi");
               doc.save(fileNameStr);
 
@@ -1320,7 +1371,7 @@
                 }
               });
 
-              // Simpan PDF (Nama file bersih tanpa tulisan 'landscape')
+              // Simpan PDF
               const fileNameStr = generatePDFFileName("Rincian_Asesmen");
               doc.save(fileNameStr);
 
